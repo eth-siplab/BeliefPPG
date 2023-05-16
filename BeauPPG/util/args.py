@@ -1,6 +1,11 @@
 import argparse
 
+
 def parse_args():
+    """
+    Parses command line arguments
+    :return: Namespace object with arguments as fields
+    """
     parser = argparse.ArgumentParser(
         description="Beau-PPG: Belief Propagation framework for uncertainty-aware PPG-based Heart Rate estimation."
     )
@@ -14,7 +19,7 @@ def parse_args():
     parser.add_argument(
         "--dataset",
         type=str,
-        default="ieee",
+        default="wesad",
         choices=["dalia", "wesad", "bami-1", "bami-2", "ieee"],
         help="Dataset to train/evaluate on",
     )
@@ -65,7 +70,7 @@ def parse_args():
         "--n_bins",
         type=int,
         default=64,
-        choices=[64, 256],
+        choices=[64, 256],  # @TODO add support for dim-256 model with additional depth
         help="Number of bins to subdivide HR space into",
     )
     parser.add_argument(
@@ -90,7 +95,10 @@ def parse_args():
         "--prior",
         type=str,
         default="laplace",
-        choices=[None, "gauss", "laplace",],
+        choices=[
+            "gauss",
+            "laplace",
+        ],  # @TODO add uniform prior (np.ones / dim**2)
         help="Prior for belief propagation",
     )
 
@@ -104,7 +112,7 @@ def parse_args():
         "--cache_pipeline",
         type=bool,
         default=True,
-        help="Whether to cache the tf.data pipeline in memory. Speeds up training greatly but crashes if not enough memory available.",
+        help="Whether to cache the windowed tf.data pipeline in memory. Speeds up training greatly but crashes if not enough memory available.",
     )
     parser.add_argument(
         "--patience",
@@ -117,12 +125,11 @@ def parse_args():
         action="store_true",
         help="Whether to use Weights & Biases. Make sure to login before usage",
     )
-
     parser.add_argument(
         "--seed",
         type=int,
         default=12,
-        help="Seed can be set for reproducibility",
+        help="Seed for full determinism.",  # @TODO make this optional
     )
 
     return parser.parse_args()

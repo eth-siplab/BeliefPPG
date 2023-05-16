@@ -1,7 +1,7 @@
 import numpy as np
-from scipy.signal import butter, lfilter
-from scipy.fft import rfft, rfftfreq
 import scipy
+from scipy.fft import rfft, rfftfreq
+from scipy.signal import butter, lfilter
 
 
 def get_strided_windows(ds, win_size, stride):
@@ -13,6 +13,7 @@ def get_strided_windows(ds, win_size, stride):
     """
     ds = ds.window(size=win_size, shift=stride, drop_remainder=True)
     return ds.flat_map(lambda window: window.batch(win_size))
+
 
 def butter_bandpass(lowcut, highcut, fs, order=4):
     """
@@ -29,7 +30,7 @@ def butter_bandpass(lowcut, highcut, fs, order=4):
     nyq = 0.5 * fs
     low = lowcut / nyq
     high = highcut / nyq
-    b, a = butter(order, [low, high], btype='band')
+    b, a = butter(order, [low, high], btype="band")
     return b, a
 
 
@@ -61,12 +62,14 @@ def process_window_spec_ppg(sig, freq, resolution, min_hz, max_hz):
     :param max_hz: Higher cutoff frequency for spectrum
     :return: Spectrogram of shape (n_steps, n_freq_bins)
     """
-    filt = lambda x : butter_bandpass_filter(x, 0.4, 4, fs=freq, order=4)
+    filt = lambda x: butter_bandpass_filter(x, 0.4, 4, fs=freq, order=4)
     sig = np.apply_along_axis(filt, 0, sig)
     sig = (sig - sig.mean(axis=0)[None, :]) / (sig.std(axis=0)[None, :] + 1e-10)
-    sig = sig.mean(axis=-1) # average over channels if multiple present
+    sig = sig.mean(axis=-1)  # average over channels if multiple present
 
-    sig = scipy.signal.resample(sig, int(len(sig) * 25 / freq)) # resample to 25 hz (optional but faster)
+    sig = scipy.signal.resample(
+        sig, int(len(sig) * 25 / freq)
+    )  # resample to 25 hz (optional but faster)
     # do FFT
     if resolution > len(sig):
         sig = np.pad(sig, (0, resolution - len(sig)))
@@ -93,10 +96,12 @@ def process_window_spec_acc(sig, freq, resolution: int, min_hz: float, max_hz: f
     sig = np.apply_along_axis(filt, 0, sig)
     sig = (sig - sig.mean(axis=0)[None, :]) / (sig.std(axis=0)[None, :] + 1e-10)
 
-    sig = scipy.signal.resample(sig, int(len(sig) * 25 / freq)) # resample to 25 hz (optional but faster)
+    sig = scipy.signal.resample(
+        sig, int(len(sig) * 25 / freq)
+    )  # resample to 25 hz (optional but faster)
     # do FFT
     if resolution > len(sig):
-        sig = np.pad(sig, ((0, resolution - len(sig)), (0,0)))
+        sig = np.pad(sig, ((0, resolution - len(sig)), (0, 0)))
     y = np.abs(rfft(sig, axis=0))
     freq = rfftfreq(len(sig), 1 / 25)
     # extract relevant frequencies
@@ -114,28 +119,9 @@ def process_window_time(ppg, ppg_freq, target_freq, filter_lowcut, filter_highcu
     :param filter_highcut: upper cutoff frequency for bandpass filtering
     :return: time-domain signal of shape (n_samples_new,)
     """
-    import matplotlib.pyplot as plt
-    #
-    # plt.title("raw")
-    # plt.plot(ppg[:1500])
-    # plt.show()
-    filt = lambda x : butter_bandpass_filter(x, filter_lowcut, filter_highcut, ppg_freq)
+    filt = lambda x: butter_bandpass_filter(x, filter_lowcut, filter_highcut, ppg_freq)
     ppg = np.apply_along_axis(filt, 0, ppg)
-    # ppg = ppg.flatten()
-    # ppg = np.expand_dims(ppg,-1)
-    # plt.plot(ppg[:1500])
-    # plt.title("filt")
-    # plt.show()
-    # print(ppg.mean(axis=0)[None, :], ppg.std(axis=0)[None, :])
-    # ppg = (ppg - ppg.mean(axis=0)[None, :]) / (ppg.std(axis=0)[None, :] + 1e-10)
-    ppg = ppg.mean(axis=-1) # average over channels if multiple present
-    # plt.plot(ppg[:1500])
-    # plt.title("avg")
-    # plt.show()
+    ppg = ppg.mean(axis=-1)  # average over channels if multiple present
     ppg = scipy.signal.resample_poly(ppg, target_freq, ppg_freq)
     ppg = np.expand_dims(ppg, -1)
-    # plt.plot(ppg[:500])
-    # plt.title("after")
-    # plt.show()
-    # make sure each channel contributes equally
     return ppg

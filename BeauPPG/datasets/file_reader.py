@@ -1,7 +1,8 @@
 """"""
 import glob
-import os
 import logging
+import os
+
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
@@ -23,22 +24,26 @@ def load_dalia(data_dir):
     ppg_freq = 64
     acc_freq = 32
     nsamples = 0
-    tpl = os.path.join(*[data_dir, "DaLia" ,"S*", "S*.pkl"])
+    tpl = os.path.join(*[data_dir, "DaLia", "S*", "S*.pkl"])
     for fname in sorted(glob.glob(tpl)):
         # load
         ds = np.load(fname, allow_pickle=True, encoding="bytes")
         # parse
-        acc = ds[b'signal'][b'wrist'][b'ACC']
-        ppg = ds[b'signal'][b'wrist'][b'BVP']
-        hr = ds[b'label']
+        acc = ds[b"signal"][b"wrist"][b"ACC"]
+        ppg = ds[b"signal"][b"wrist"][b"BVP"]
+        hr = ds[b"label"]
         signals.append((ppg, acc, hr))
         names.append(os.path.split(fname)[1][:-4])
-        nsamples += len(ppg) / (60*ppg_freq)
+        nsamples += len(ppg) / (60 * ppg_freq)
 
-    assert nsamples > 0, r'Did not find any files matching path %s' % tpl
+    assert nsamples > 0, r"Did not find any files matching path %s" % tpl
 
-    logging.info(r'Loaded DaLiA (signal length: %d min, number of sessions: %d)' % (nsamples, len(signals)))
+    logging.info(
+        r"Loaded DaLiA (signal length: %d min, number of sessions: %d)"
+        % (nsamples, len(signals))
+    )
     return signals, names, ppg_freq, acc_freq
+
 
 def load_wesad(data_dir):
     """
@@ -56,21 +61,28 @@ def load_wesad(data_dir):
     ppg_freq = 64
     acc_freq = 32
     nsamples = 0
-    tpl = os.path.join(*[data_dir, "WESAD" ,"S*", "S*.pkl"])
+    tpl = os.path.join(*[data_dir, "WESAD", "S*", "S*.pkl"])
     for fname in sorted(glob.glob(tpl)):
         # load
         ds = np.load(fname, allow_pickle=True, encoding="bytes")
+        name = os.path.split(fname)[1][:-4]
         # parse
-        acc = ds[b'signal'][b'wrist'][b'ACC']
-        ppg = ds[b'signal'][b'wrist'][b'BVP']
-        hr = ds[b'label']
+        ppg = ds[b"signal"][b"wrist"][b"BVP"]
+        acc = ds[b"signal"][b"wrist"][b"ACC"]
+        hr = np.loadtxt(
+            os.path.join(*[data_dir, "WESAD", "GeneratedLabels", f"HR_{name}.csv"]),
+            delimiter=",",
+        )
         signals.append((ppg, acc, hr))
-        names.append(os.path.split(fname)[1][:-4])
-        nsamples += len(ppg) / (60*ppg_freq)
+        names.append(name)
+        nsamples += len(ppg) / (60 * ppg_freq)
 
-    assert nsamples > 0, r'Did not find any files matching path %s' % tpl
+    assert nsamples > 0, r"Did not find any files matching path %s" % tpl
 
-    logging.info(r'Loaded WESAD (signal length: %d min, number of sessions: %d)' % (nsamples, len(signals)))
+    logging.info(
+        r"Loaded WESAD (signal length: %d min, number of sessions: %d)"
+        % (nsamples, len(signals))
+    )
     return signals, names, ppg_freq, acc_freq
 
 
@@ -91,7 +103,7 @@ def load_bami_1(data_dir):
     ppg_freq = 50
     acc_freq = 50
     nsamples = 0
-    tpl = os.path.join(*[data_dir, "BAMI" , "BAMI-1" ,"BAMI1_*.mat"])
+    tpl = os.path.join(*[data_dir, "BAMI", "BAMI-1", "BAMI1_*.mat"])
     for fname in sorted(glob.glob(tpl)):
         # load
         mat = loadmat(fname)
@@ -99,16 +111,19 @@ def load_bami_1(data_dir):
         ppg = np.array(mat["rawPPG"]).T
         acc = np.array(mat["rawAcc"]).T
         hr = np.array(mat["bpm_ecg"]).flatten()
-        length = int((len(ppg[0]) - 6*50)/(2*50))
-        hr = hr[-length:] # there is a sequence with one label too much... wonder why?
+        length = int((len(ppg[0]) - 6 * 50) / (2 * 50))
+        hr = hr[-length:]  # there is a sequence with one label too much... wonder why?
 
         signals.append((ppg, acc, hr))
         names.append(os.path.split(fname)[1][:-4])
-        nsamples += len(ppg) / (60*ppg_freq)
+        nsamples += len(ppg) / (60 * ppg_freq)
 
-    assert nsamples > 0, r'Did not find any files matching path %s' % tpl
+    assert nsamples > 0, r"Did not find any files matching path %s" % tpl
 
-    logging.info(r'Loaded BAMI-1 (signal length: %d min, number of sessions: %d)' % (nsamples, len(signals)))
+    logging.info(
+        r"Loaded BAMI-1 (signal length: %d min, number of sessions: %d)"
+        % (nsamples, len(signals))
+    )
     return signals, names, ppg_freq, acc_freq
 
 
@@ -137,19 +152,23 @@ def load_bami_2(data_dir):
         ppg = np.array(mat["rawPPG"]).T
         acc = np.array(mat["rawAcc"]).T
         hr = np.array(mat["bpm_ecg"]).flatten()
-        length = int((len(ppg[0]) - 6*50)/(2*50))
-        length2 = len(hr)*(2*50) + 6*50
-        hr = hr[-length:] # there is a sequence with one label too much... wonder why?
-        ppg = np.array([p[-length2:] for p in ppg]) # one sequence is one label short... wonder why?
+        length = int((len(ppg[0]) - 6 * 50) / (2 * 50))
+        length2 = len(hr) * (2 * 50) + 6 * 50
+        hr = hr[-length:]  # there is a sequence with one label too much... wonder why?
+        ppg = np.array(
+            [p[-length2:] for p in ppg]
+        )  # one sequence is one label short... wonder why?
         signals.append((ppg, acc, hr))
         names.append(os.path.split(fname)[1][:-4])
         nsamples += len(ppg) / (60 * ppg_freq)
 
-    assert nsamples > 0, r'Did not find any files matching path %s' % tpl
+    assert nsamples > 0, r"Did not find any files matching path %s" % tpl
 
-    logging.info(r'Loaded BAMI-2 (signal length: %d min, number of sessions: %d)' % (nsamples, len(signals)))
+    logging.info(
+        r"Loaded BAMI-2 (signal length: %d min, number of sessions: %d)"
+        % (nsamples, len(signals))
+    )
     return signals, names, ppg_freq, acc_freq
-
 
 
 def load_ieee(data_dir, load_train=True, load_extra=False, load_test=False):
@@ -171,12 +190,18 @@ def load_ieee(data_dir, load_train=True, load_extra=False, load_test=False):
     signals, names = [], []
     nsamples = 0
     # prepare filenames
-    train_tpl = os.path.join(*[data_dir, "IEEE" ,"Training_data", "DATA_*_TYPE[0-9][0-9].mat"])
-    extra_tpl = os.path.join(*[data_dir, "IEEE" ,"Extra_TrainingData", "DATA_*_T[0-9]*.mat"])
-    test_tpl = os.path.join(*[data_dir, "IEEE" ,"IEEE","TestData", "TEST_S*_T*.mat"])
+    train_tpl = os.path.join(
+        *[data_dir, "IEEE", "Training_data", "DATA_*_TYPE[0-9][0-9].mat"]
+    )
+    extra_tpl = os.path.join(
+        *[data_dir, "IEEE", "Extra_TrainingData", "DATA_*_T[0-9]*.mat"]
+    )
+    test_tpl = os.path.join(*[data_dir, "IEEE", "IEEE", "TestData", "TEST_S*_T*.mat"])
 
-    train_names = (glob.glob(train_tpl) if load_train else []) + (glob.glob(extra_tpl) if load_extra else [])
-    test_names = (glob.glob(test_tpl) if load_test else [])
+    train_names = (glob.glob(train_tpl) if load_train else []) + (
+        glob.glob(extra_tpl) if load_extra else []
+    )
+    test_names = glob.glob(test_tpl) if load_test else []
     fnames = sorted(train_names) + sorted(test_names)
 
     for fname in fnames:
@@ -201,10 +226,15 @@ def load_ieee(data_dir, load_train=True, load_extra=False, load_test=False):
         names.append(os.path.split(fname)[1][:-4])
         nsamples += len(ppg) / (60 * ppg_freq)
 
+    assert nsamples > 0, r"Did not find any files matching paths %s %s %s" % (
+        train_tpl,
+        extra_tpl,
+        test_tpl,
+    )
 
-    assert nsamples > 0, r'Did not find any files matching paths %s %s %s' % (train_tpl, extra_tpl, test_tpl)
-
-    logging.info(r'Loaded IEEE (signal length: %d min, number of sessions: %d)' % (nsamples, len(signals)))
-    logging.info((r'The following files were read: %s' % ('\n'.join(['\n'] + fnames))))
+    logging.info(
+        r"Loaded IEEE (signal length: %d min, number of sessions: %d)"
+        % (nsamples, len(signals))
+    )
+    logging.info((r"The following files were read: %s" % ("\n".join(["\n"] + fnames))))
     return signals, names, ppg_freq, acc_freq
-

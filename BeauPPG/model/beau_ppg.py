@@ -2,16 +2,16 @@ from argparse import Namespace
 
 import keras.backend as K
 import tensorflow as tf
-from keras.layers import Conv2D, Dropout, MaxPooling1D, Conv1D, Activation, UpSampling1D, Attention, Lambda, Dense, \
-    Flatten
+from keras.layers import (Activation, Attention, Conv1D, Conv2D, Dense,
+                          Dropout, Flatten, Lambda, MaxPooling1D, UpSampling1D)
 
-from BeauPPG.model.positional_encoding import PositionalEmbedding
+from BeauPPG.model.positional_encoding import PositionalEncoding
 from BeauPPG.model.timedomain_backbone import get_timedomain_backbone
 
 
 def attention_block_1d(x, g, inter_channel):
     """
-    attention block used in U-Net (upsampling path)
+    helper function for attention block used in U-Net (upsampling path)
     Based on https://github.com/lixiaolei1982/Keras-Implementation-of-U-Net-R2U-Net-Attention-U-Net-Attention-R2U-Net.-
     :param x: branch 1 (from bottleneck)
     :param g: branch 2 (from down)
@@ -28,13 +28,13 @@ def attention_block_1d(x, g, inter_channel):
 
     # f(?,g_height,g_width,inter_channel)
 
-    f = Activation('relu')(tf.math.add(theta_x, phi_g))
+    f = Activation("relu")(tf.math.add(theta_x, phi_g))
 
     # psi_f(?,g_height,g_width,1)
 
     psi_f = Conv1D(1, 1, strides=1, data_format="channels_last")(f)
 
-    rate = Activation('sigmoid')(psi_f)
+    rate = Activation("sigmoid")(psi_f)
 
     # rate(?,x_height,x_width)
 
@@ -45,9 +45,11 @@ def attention_block_1d(x, g, inter_channel):
     return att_x
 
 
-def attention_up_and_concate(down_layer, layer, data_format='channels_first', down_fac=2):
+def attention_up_and_concate(
+    down_layer, layer, data_format="channels_first", down_fac=2
+):
     """
-    defines an upsampling block
+    helper function to define an upsampling block
     Based on https://github.com/lixiaolei1982/Keras-Implementation-of-U-Net-R2U-Net-Attention-U-Net-Attention-R2U-Net.-
     :param down_layer: skip connections
     :param layer: upsampling branch
@@ -55,7 +57,7 @@ def attention_up_and_concate(down_layer, layer, data_format='channels_first', do
     :param down_fac: how much to down/upsample each depth level
     :return: output of depth level
     """
-    if data_format == 'channels_first':
+    if data_format == "channels_first":
         in_channel = down_layer.get_shape().as_list()[1]
     else:
         in_channel = down_layer.get_shape().as_list()[-1]
@@ -65,14 +67,13 @@ def attention_up_and_concate(down_layer, layer, data_format='channels_first', do
 
     layer = attention_block_1d(x=layer, g=up, inter_channel=in_channel // 4)
 
-    if data_format == 'channels_first':
+    if data_format == "channels_first":
         my_concat = Lambda(lambda x: K.concatenate([x[0], x[1]], axis=1))
     else:
         my_concat = Lambda(lambda x: K.concatenate([x[0], x[1]], axis=-1))
 
     concate = my_concat([up, layer])
     return concate
-
 
 
 def double_attn(inp, n_frames, n_bins, channels):
@@ -91,18 +92,28 @@ def double_attn(inp, n_frames, n_bins, channels):
     x1 = Dropout(0.1)(x1)
 
     # self-attention over time
-    x1_freq = PositionalEmbedding(seqlen=n_bins, d_model=channels)(x1)
+    x1_freq = PositionalEncoding(seqlen=n_bins, d_model=channels)(x1)
     freq_attn = Attention()([Dense(channels)(x1_freq), Dense(channels)(x1_freq)])
 
     # self-attention over frequency space
-    x1_time = PositionalEmbedding(seqlen=n_frames, d_model=channels)(tf.transpose(x1, [0, 2, 1, 3]))
+    x1_time = PositionalEncoding(seqlen=n_frames, d_model=channels)(
+        tf.transpose(x1, [0, 2, 1, 3])
+    )
     time_attn = Attention()([Dense(channels)(x1_time), Dense(channels)(x1_time)])
     time_attn = tf.transpose(time_attn, [0, 2, 1, 3])
 
     return time_attn, freq_attn
 
 
-def hybrid_unet(spec_input, time_input, depth=3, attn_channels=32, init_channels=12, down_fac=4, use_time_backbone=True):
+def hybrid_unet(
+    spec_input,
+    time_input,
+    depth=3,
+    attn_channels=32,
+    init_channels=12,
+    down_fac=4,
+    use_time_backbone=True,
+):
     """
     Builds the architecture at the core of the model, involving
     1) an attention block followed by the reduction of the time dimension
@@ -118,7 +129,9 @@ def hybrid_unet(spec_input, time_input, depth=3, attn_channels=32, init_channels
     :param use_time_backbone: whether to attach the time-domain backbone to the NN or not
     :return: tf.tensor of shape (batch_size, n_bins)
     """
-    time_attn, freq_attn = double_attn(spec_input, spec_input.shape[1], spec_input.shape[2], attn_channels)
+    time_attn, freq_attn = double_attn(
+        spec_input, spec_input.shape[1], spec_input.shape[2], attn_channels
+    )
     # reduce mean over 7 time steps
     x = Dense(attn_channels)(spec_input) + time_attn + freq_attn
     x = tf.reduce_mean(x, axis=1)
@@ -130,9 +143,13 @@ def hybrid_unet(spec_input, time_input, depth=3, attn_channels=32, init_channels
 
     # down
     for i in range(depth):
-        x = Conv1D(channels, 3, activation="relu", padding='same', data_format="channels_last")(x)
+        x = Conv1D(
+            channels, 3, activation="relu", padding="same", data_format="channels_last"
+        )(x)
         x = Dropout(0.2)(x)
-        x = Conv1D(channels, 3, activation="relu", padding='same', data_format="channels_last")(x)
+        x = Conv1D(
+            channels, 3, activation="relu", padding="same", data_format="channels_last"
+        )(x)
         skips.append(x)
         x = MaxPooling1D(down_fac, strides=down_fac, data_format="channels_last")(x)
         channels = channels * 2
@@ -159,31 +176,37 @@ def hybrid_unet(spec_input, time_input, depth=3, attn_channels=32, init_channels
     # up
     for i in reversed(range(depth)):
         channels = channels // 2
-        x = attention_up_and_concate(x, skips[i], data_format="channels_last", down_fac=down_fac)
-        x = Conv1D(channels, 3, activation="relu", padding='same', data_format="channels_last")(x)
+        x = attention_up_and_concate(
+            x, skips[i], data_format="channels_last", down_fac=down_fac
+        )
+        x = Conv1D(
+            channels, 3, activation="relu", padding="same", data_format="channels_last"
+        )(x)
         x = Dropout(0.2)(x)
-        x = Conv1D(channels, 3, activation="relu", padding='same', data_format="channels_last")(x)
+        x = Conv1D(
+            channels, 3, activation="relu", padding="same", data_format="channels_last"
+        )(x)
 
-    conv6 = Conv1D(1, 1, padding='same', data_format="channels_last")(x)
+    conv6 = Conv1D(1, 1, padding="same", data_format="channels_last")(x)
 
     # out
     x = Flatten()(conv6)
     return x
 
 
-def build_beau_ppg(args : Namespace):
+def build_beau_ppg(args: Namespace):
     """
     Wrapper function constructing the BeauPPG architecture
     :param args: Namespace object containing config
     :return: tf.kers.models.Model the uncompiled functional model
     """
     spec_input = tf.keras.layers.Input(shape=(args.n_frames, args.n_bins, 2))
-    time_input = tf.keras.layers.Input(shape=(args.freq * (args.n_frames-1) * 2 + args.freq * 8, 1))
+    time_input = tf.keras.layers.Input(
+        shape=(args.freq * (args.n_frames - 1) * 2 + args.freq * 8, 1)
+    )
 
     logits = hybrid_unet(spec_input, time_input)
 
     out = Activation("softmax")(logits)
     model = tf.keras.models.Model(inputs=[spec_input, time_input], outputs=out)
     return model
-
-

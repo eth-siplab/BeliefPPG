@@ -1,4 +1,5 @@
-from keras.layers import BatchNormalization, Dropout, LSTM, MaxPooling1D, Conv1D, Activation, Dense
+from keras.layers import (LSTM, Activation, BatchNormalization, Conv1D, Dense,
+                          Dropout, MaxPooling1D)
 
 
 def get_timedomain_backbone(inp, output_shape):
@@ -22,8 +23,12 @@ def get_timedomain_backbone(inp, output_shape):
     x = Activation("leaky_relu")(x)
     x = MaxPooling1D(4, strides=4)(x)
 
-    x = LSTM(64, activation="tanh", dropout=0.1, return_sequences=True)(x, training=True)
-    x = LSTM(64, activation="tanh", dropout=0.1, return_sequences=False)(x, training=True)
+    x = LSTM(64, activation="tanh", dropout=0.1, return_sequences=True)(
+        x, training=True
+    )
+    x = LSTM(64, activation="tanh", dropout=0.1, return_sequences=False)(
+        x, training=True
+    )
 
     feat_branch = Dense(output_shape, activation="leaky_relu")(x)
     value_branch = Dense(output_shape, activation="leaky_relu")(x)
