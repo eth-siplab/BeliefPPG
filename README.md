@@ -15,7 +15,7 @@ To re-train and evaluate the model in leave-one-session-out (LoSo) cross-validat
 
 `pip install -r requirements.txt`
 
- `download_data.sh`
+ `sh download_data.sh`
  
 `python train_eval.py --data_dir ${DATA_PATH} --dataset dalia `
 
