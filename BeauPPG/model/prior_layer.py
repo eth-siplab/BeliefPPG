@@ -105,8 +105,8 @@ class PriorLayer(tf.keras.layers.Layer):
         :param ps: ps: tf.tensor of shape (n_samples, n_bins) containing probabilities
         :return: tf.tensor of same shape containing updated probabilities
         """
-        output = tf.TensorArray(tf.float32, size=len(ps))
-        for i in range(len(ps)):
+        output = tf.TensorArray(tf.float32, size=tf.shape(ps)[0])
+        for i in tf.range(tf.shape(ps)[0]):
             p_prior = tf.linalg.matvec(self.transition_prior, self.state)
             # add observations
             p_new = p_prior * ps[i]

@@ -2,8 +2,18 @@ from argparse import Namespace
 
 import keras.backend as K
 import tensorflow as tf
-from keras.layers import (Activation, Attention, Conv1D, Conv2D, Dense,
-                          Dropout, Flatten, Lambda, MaxPooling1D, UpSampling1D)
+from keras.layers import (
+    Activation,
+    Attention,
+    Conv1D,
+    Conv2D,
+    Dense,
+    Dropout,
+    Flatten,
+    Lambda,
+    MaxPooling1D,
+    UpSampling1D,
+)
 
 from BeauPPG.model.positional_encoding import PositionalEncoding
 from BeauPPG.model.timedomain_backbone import get_timedomain_backbone

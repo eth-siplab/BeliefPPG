@@ -148,8 +148,6 @@ def train_eval(args):
     folds = generate_split(np.arange(0, len(sessions)))
 
     for i, (train_ixes, val_ixes, test_ixes) in enumerate(folds):
-        if i < 10:
-            continue
         train_split, val_split, test_sesh = (
             sessions[train_ixes],
             sessions[val_ixes],
@@ -194,7 +192,7 @@ def train_eval(args):
             train_ds.batch(args.batch_size),
             validation_data=val_ds.batch(args.batch_size),
             epochs=10000,  # rely on early stopping, set this to imaginary value
-            verbose=1,
+            verbose=2,
             callbacks=callbacks,
         )
 

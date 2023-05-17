@@ -33,7 +33,6 @@ class BinnedRegressionLoss(tf.keras.losses.Loss):
         self.bin_edges = tf.range(
             self.min_bpm, self.max_bpm, (self.max_bpm - self.min_bpm) / self.dim
         )
-        print(self.bin_edges.shape)
 
     @tf.function
     def y_to_bins(self, y):

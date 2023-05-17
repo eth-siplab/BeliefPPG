@@ -1,5 +1,12 @@
-from keras.layers import (LSTM, Activation, BatchNormalization, Conv1D, Dense,
-                          Dropout, MaxPooling1D)
+from keras.layers import (
+    LSTM,
+    Activation,
+    BatchNormalization,
+    Conv1D,
+    Dense,
+    Dropout,
+    MaxPooling1D,
+)
 
 
 def get_timedomain_backbone(inp, output_shape):

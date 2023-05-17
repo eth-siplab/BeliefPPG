@@ -10,7 +10,7 @@ sbatch \
     --time=05:00:00 \
     --nodes=1 \
     --ntasks=1 \
-    --cpus-per-task=20 \
+    --cpus-per-task=10 \
     -J "beauppg-split-${SPLIT}" \
     --mem-per-cpu=5000 \
     --gres=gpumem:10240m \

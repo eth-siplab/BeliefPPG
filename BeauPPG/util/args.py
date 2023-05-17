@@ -19,8 +19,8 @@ def parse_args():
     parser.add_argument(
         "--dataset",
         type=str,
-        default="wesad",
-        choices=["dalia", "wesad", "bami-1", "bami-2", "ieee"],
+        default="dalia",
+        choices=["dalia", "wesad", "bami", "bami-1", "bami-2", "ieee"],
         help="Dataset to train/evaluate on",
     )
     parser.add_argument(
@@ -94,7 +94,7 @@ def parse_args():
     parser.add_argument(
         "--prior",
         type=str,
-        default="laplace",
+        default="gauss",
         choices=[
             "gauss",
             "laplace",

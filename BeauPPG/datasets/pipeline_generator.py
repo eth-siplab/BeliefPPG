@@ -5,12 +5,19 @@ from argparse import Namespace
 import numpy as np
 import tensorflow as tf
 
-from BeauPPG.datasets.file_reader import (load_bami_1, load_bami_2, load_dalia,
-                                          load_ieee, load_wesad)
-from BeauPPG.util.preprocessing import (get_strided_windows,
-                                        process_window_spec_acc,
-                                        process_window_spec_ppg,
-                                        process_window_time)
+from BeauPPG.datasets.file_reader import (
+    load_bami_1,
+    load_bami_2,
+    load_dalia,
+    load_ieee,
+    load_wesad,
+)
+from BeauPPG.util.preprocessing import (
+    get_strided_windows,
+    process_window_spec_acc,
+    process_window_spec_ppg,
+    process_window_time,
+)
 
 
 def prepare_session_spec(
@@ -112,6 +119,10 @@ def get_sessions(args: Namespace):
         sessions, names, ppg_freq, acc_freq = load_bami_1(args.data_dir)
     elif args.dataset == "bami-2":
         sessions, names, ppg_freq, acc_freq = load_bami_2(args.data_dir)
+    elif args.dataset == "bami":
+        sessions1, names1, ppg_freq, acc_freq = load_bami_1(args.data_dir)
+        sessions2, names2, ppg_freq, acc_freq = load_bami_2(args.data_dir)
+        sessions, names = sessions1 + sessions2, names1 + names2
     elif args.dataset == "ieee":
         sessions, names, ppg_freq, acc_freq = load_ieee(args.data_dir)
     else:

@@ -111,7 +111,7 @@ def load_bami_1(data_dir):
         ppg = np.array(mat["rawPPG"]).T
         acc = np.array(mat["rawAcc"]).T
         hr = np.array(mat["bpm_ecg"]).flatten()
-        length = int((len(ppg[0]) - 6 * 50) / (2 * 50))
+        length = int((len(ppg) - 6 * 50) / (2 * 50))
         hr = hr[-length:]  # there is a sequence with one label too much... wonder why?
 
         signals.append((ppg, acc, hr))
@@ -152,12 +152,11 @@ def load_bami_2(data_dir):
         ppg = np.array(mat["rawPPG"]).T
         acc = np.array(mat["rawAcc"]).T
         hr = np.array(mat["bpm_ecg"]).flatten()
-        length = int((len(ppg[0]) - 6 * 50) / (2 * 50))
+        length = int((len(ppg) - 6 * 50) / (2 * 50))
         length2 = len(hr) * (2 * 50) + 6 * 50
         hr = hr[-length:]  # there is a sequence with one label too much... wonder why?
-        ppg = np.array(
-            [p[-length2:] for p in ppg]
-        )  # one sequence is one label short... wonder why?
+        ppg = ppg[-length2:]  # one sequence is one label short... wonder why?
+        acc = acc[-length2:]
         signals.append((ppg, acc, hr))
         names.append(os.path.split(fname)[1][:-4])
         nsamples += len(ppg) / (60 * ppg_freq)
@@ -182,7 +181,7 @@ def load_ieee(data_dir, load_train=True, load_extra=False, load_test=False):
     :return: tuple of (signals, names, ppg_freq, acc_freq
         signals: list of signal tuples (ppg, acc, hr) each representing one session/subject.
                  Signals are assumed to be in channels-last format.
-                 Ground truth hr is assumed to be the instantaneous HR in an 8-second window with 2s stride.
+                 Ground truth hr is assumed to be the instantaneous HR in an 8-second window with 2s stride of matching length.
         names:   list of strings describing the sessions
         ppg_freq, acc_freq: respective sampling frequencies
     """
