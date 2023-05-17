@@ -3,6 +3,7 @@
 This is the official code release for the UAI 2023 conference paper **"BeaU-PPG: Uncertainty-aware Heart Rate Estimation from PPG signals via Belief Propagation"** [Link]
 
 TL; DR
+
 BeauPPG is a probabilistic heart rate inference framework. Taking multi-channel PPG and Accelerometer signals as input, it predicts the instantaneous heart rate and provides an uncertainty estimate for the prediction. This repository contains code to run leave-one-session-out cross-validation experiments on multiple supported datasets.
 
 ## Abstract
@@ -13,7 +14,9 @@ BeauPPG is a probabilistic heart rate inference framework. Taking multi-channel 
 To re-train and evaluate the model in leave-one-session-out (LoSo) cross-validation, run the following lines of code in your terminal:
 
 `pip install -r requirements.txt`
+
  `download_data.sh`
+ 
 `python train_eval.py --data_dir ${DATA_PATH} --dataset dalia `
 
 This will trigger the following steps:
