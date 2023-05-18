@@ -236,7 +236,7 @@ def train_eval(args):
     result_df["mean"] = result_df.mean(axis=1)
     result_df["std"] = result_df.std(axis=1)
 
-    result_df.to_csv(os.path.join(args.out_dir, "results"))
+    result_df.to_csv(os.path.join(args.out_dir, f"results_{args.dataset}.csv"))
     logging.info(result_df.to_string())
 
 
