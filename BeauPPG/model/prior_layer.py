@@ -98,6 +98,7 @@ class PriorLayer(tf.keras.layers.Layer):
         # no need for normalization, probability leaks are handled during forward propagation
         self.transition_prior = tf.constant(trans_prob, "float32")
 
+    @tf.function
     def _propagate_sumprod(self, ps):
         """
         Performs online belief propagation i.e. sum-product message passing
@@ -105,14 +106,16 @@ class PriorLayer(tf.keras.layers.Layer):
         :param ps: ps: tf.tensor of shape (n_samples, n_bins) containing probabilities
         :return: tf.tensor of same shape containing updated probabilities
         """
+        i = tf.constant(0)
         output = tf.TensorArray(tf.float32, size=tf.shape(ps)[0])
-        for i in tf.range(tf.shape(ps)[0]):
+        while i < tf.shape(ps)[0]:
+            # propagate (blurred) last observations
             p_prior = tf.linalg.matvec(self.transition_prior, self.state)
-            # add observations
+            # add current observations
             p_new = p_prior * ps[i]
-            p_new = p_new / tf.reduce_sum(p_new)
-            output = output.write(i, p_new)
-            tf.keras.backend.update(self.state, p_new)
+            self.state = p_new / tf.reduce_sum(p_new)
+            output = output.write(i, self.state)
+            i += 1
 
         return output.stack()
 
