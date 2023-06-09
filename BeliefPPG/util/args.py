@@ -7,7 +7,7 @@ def parse_args():
     :return: Namespace object with arguments as fields
     """
     parser = argparse.ArgumentParser(
-        description="Beau-PPG: Belief Propagation framework for uncertainty-aware PPG-based Heart Rate estimation."
+        description="Belief-PPG: Belief Propagation framework for uncertainty-aware PPG-based Heart Rate estimation."
     )
     # SETUP
     parser.add_argument(

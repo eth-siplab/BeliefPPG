@@ -15,8 +15,8 @@ from keras.layers import (
     UpSampling1D,
 )
 
-from BeauPPG.model.positional_encoding import PositionalEncoding
-from BeauPPG.model.timedomain_backbone import get_timedomain_backbone
+from BeliefPPG.model.positional_encoding import PositionalEncoding
+from BeliefPPG.model.timedomain_backbone import get_timedomain_backbone
 
 
 def attention_block_1d(x, g, inter_channel):
@@ -204,9 +204,9 @@ def hybrid_unet(
     return x
 
 
-def build_beau_ppg(args: Namespace):
+def build_belief_ppg(args: Namespace):
     """
-    Wrapper function constructing the BeauPPG architecture
+    Wrapper function constructing the BeliefPPG architecture
     :param args: Namespace object containing config
     :return: tf.kers.models.Model the uncompiled functional model
     """

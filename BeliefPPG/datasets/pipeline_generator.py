@@ -5,14 +5,14 @@ from argparse import Namespace
 import numpy as np
 import tensorflow as tf
 
-from BeauPPG.datasets.file_reader import (
+from BeliefPPG.datasets.file_reader import (
     load_bami_1,
     load_bami_2,
     load_dalia,
     load_ieee,
     load_wesad,
 )
-from BeauPPG.util.preprocessing import (
+from BeliefPPG.util.preprocessing import (
     get_strided_windows,
     process_window_spec_acc,
     process_window_spec_ppg,

@@ -10,14 +10,14 @@ from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import KFold
 
-import BeauPPG
-from BeauPPG.datasets.pipeline_generator import get_sessions, join_sessions
-from BeauPPG.model.beau_ppg import build_beau_ppg
-from BeauPPG.model.binned_regression_loss import BinnedRegressionLoss
-from BeauPPG.model.prior_layer import PriorLayer
-from BeauPPG.util.args import parse_args
-from BeauPPG.util.augmentations import add_augmentations
-from BeauPPG.util.callbacks import get_callbacks
+import BeliefPPG
+from BeliefPPG.datasets.pipeline_generator import get_sessions, join_sessions
+from BeliefPPG.model.belief_ppg import build_belief_ppg
+from BeliefPPG.model.binned_regression_loss import BinnedRegressionLoss
+from BeliefPPG.model.prior_layer import PriorLayer
+from BeliefPPG.util.args import parse_args
+from BeliefPPG.util.augmentations import add_augmentations
+from BeliefPPG.util.callbacks import get_callbacks
 
 
 def generate_split(sequences):
@@ -161,14 +161,14 @@ def train_eval(args):
 
         if args.use_wandb:
             wandb.init(
-                project="BeauPPG",
+                project="BeliefPPG",
                 name=f"{args.dataset}-{names[test_ixes[0]]}",
                 config=vars(args),
                 dir=args.out_dir,
             )
 
         # prepare tf.data pipeline
-        train_ds = BeauPPG.datasets.pipeline_generator.join_sessions(
+        train_ds = BeliefPPG.datasets.pipeline_generator.join_sessions(
             train_split, shuffle=True
         )
         val_ds = join_sessions(val_split, shuffle=False)
@@ -179,7 +179,7 @@ def train_eval(args):
             train_ds = add_augmentations(train_ds, args)
 
         # build model
-        model = build_beau_ppg(args)
+        model = build_belief_ppg(args)
         loss_fn = BinnedRegressionLoss(
             args.n_bins, args.min_hz, args.max_hz, args.sigma_y
         )

@@ -1,10 +1,10 @@
-# BeauPPG - Heart Rate Estimation from PPG signals
+# BeliefPPG - Heart Rate Estimation from PPG signals
 
-This is the official code release for the UAI 2023 conference paper **"BeaU-PPG: Uncertainty-aware Heart Rate Estimation from PPG signals via Belief Propagation"** [Link]
+This is the official code release for the UAI 2023 conference paper **"Belief-PPG: Uncertainty-aware Heart Rate Estimation from PPG signals via Belief Propagation"** [Link]
 
 TL; DR
 
-BeauPPG is a probabilistic heart rate inference framework. Taking multi-channel PPG and Accelerometer signals as input, it predicts the instantaneous heart rate and provides an uncertainty estimate for the prediction. This repository contains code to run leave-one-session-out cross-validation experiments on multiple supported datasets.
+BeliefPPG is a probabilistic heart rate inference framework. Taking multi-channel PPG and Accelerometer signals as input, it predicts the instantaneous heart rate and provides an uncertainty estimate for the prediction. This repository contains code to run leave-one-session-out cross-validation experiments on multiple supported datasets.
 
 ## Abstract
  We present a novel learning-based method that achieves state-of-the-art performance on several heart rate estimation benchmarks extracted from photoplethysmography signals (PPG). We consider the evolution of the heart rate in the context of a discrete-time stochastic process that we represent as a hidden Markov model. We derive a distribution over possible heart rate values for a given PPG signal window through a trained neural network. Using belief propagation, we incorporate the statistical distribution of heart rate changes to refine these estimates in a temporal context. From this, we obtain a quantized probability distribution over the range of possible heart rate values that captures a meaningful and well-calibrated estimate of the inherent predictive uncertainty. We show the robustness of our method on eight public datasets with three-different cross-validation experiments.*
