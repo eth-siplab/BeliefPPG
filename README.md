@@ -1,10 +1,12 @@
 ## BeliefPPG: Uncertainty-aware Heart Rate Estimation from PPG signals via Belief Propagation (UAI 2023, Official Code)
 
-Valentin Bieri<sup>2</sup>, [Paul Streli](https://paulstreli.com/)<sup>1</sup>, Berken Utku Demirel<sup>1</sup>, [Christian Holz](https://www.christianholz.net/)<sup>1</sup>
+Valentin Bieri<sup>*2</sup>, [Paul Streli](https://paulstreli.com/)<sup>*1</sup>, Berken Utku Demirel<sup>1</sup>, [Christian Holz](https://www.christianholz.net/)<sup>1</sup>
 
 <sup>1</sup> [Sensing, Interaction & Perception Lab](https://siplab.org/), Department of Computer Science, ETH Zürich, Switzerland
 <br>
 <sup>2</sup> MSc Student, Department of Computer Science, ETH Zürich, Switzerland
+<br>
+<sup>*</sup> These authors contributed equally to this work
 
 ___________
 
@@ -48,7 +50,7 @@ python train_eval.py --data_dir ${DATA_PATH} --dataset dalia
 ```
 
 This will run LoSo cross-validation on the DaLiA dataset. On a modern GPU, expect one full run to take roughly 10-14 hours.
-Results, that is the MAEs, the predictions and the models, are saved in the output directory, which can be modified with the `--out_dir` argument. *Note that you may have to reinstall h5py in order for the models to be saved correctly.*
+Results, that is the MAEs, predictions and models, are saved in the output directory, which can be specified with the `--out_dir` argument. *Note that you may have to reinstall h5py in order for the models to be saved correctly.*
 
 We highly recommend that you use Weights&Biases to monitor model training. Make sure to log into W&B in the console and then simply add the argument `--use_wandb` to save additional plots and logging information.
 
