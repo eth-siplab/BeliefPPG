@@ -24,14 +24,14 @@ Contents
 This repository contains code to run leave-one-session-out cross-validation experiments on multiple supported datasets. Taking multi-channel PPG and Accelerometer signals as input, BeliefPPG predicts the instantaneous heart rate and provides an uncertainty estimate for the prediction.
 
 
-- [Datasets](#Datasets) 
-- [Training and Inference](#Training and inference) 
-- [Citation](#Citation)
-- [License and Acknowledgement](#License and Acknowledgement)
+- [Datasets](#datasets) 
+- [Training and Inference](#training-and-inference) 
+- [Citation](#citation)
+- [License and Acknowledgement](#license-and-acknowledgement)
 
 Datasets
 ----------
-We provide a shell script, which downloads the datasets DaLiA, WESAD, BAMI-1 and BAMI-2 from their original hosts. Run the following line in your terminal:
+We provide a shell script which downloads the datasets DaLiA, WESAD, BAMI-1 and BAMI-2 from their original hosts. Run the following line in your terminal:
 
 ```
 sh download_data.sh
@@ -48,7 +48,7 @@ python train_eval.py --data_dir ${DATA_PATH} --dataset dalia
 ```
 
 This will run LoSo cross-validation on the DaLiA dataset. On a modern GPU, expect one full run to take roughly 10-14 hours.
-Results - that is the MAEs, the predictions and the models - are saved in the output directory, which can be modified with the `--out_dir` argument. *Note that you may have to reinstall h5py in order for the models to be saved correctly.*
+Results, that is the MAEs, the predictions and the models, are saved in the output directory, which can be modified with the `--out_dir` argument. *Note that you may have to reinstall h5py in order for the models to be saved correctly.*
 
 We highly recommend that you use Weights&Biases to monitor model training. Make sure to log into W&B in the console and then simply add the argument `--use_wandb` to save additional plots and logging information.
 
@@ -58,11 +58,11 @@ Citation
 If your find our paper or codes useful, please cite our work:
 
     @InProceedings{bieri_741,
-    title = {BeliefPPG: Uncertainty-aware heart rate estimation from PPG signals via belief propagation},
-    author = {Bieri, Valentin and Streli, Paul and Demirel, Berken Utku and Holz, Christian},
-    booktitle={},
-    year={2023},
-    organization={}
+        title = {BeliefPPG: Uncertainty-aware heart rate estimation from PPG signals via belief propagation},
+        author = {Bieri, Valentin and Streli, Paul and Demirel, Berken Utku and Holz, Christian},
+        booktitle={},
+        year={2023},
+        organization={}
     }
 
 License and Acknowledgement
