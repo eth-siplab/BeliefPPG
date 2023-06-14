@@ -38,7 +38,7 @@ We provide a shell script which downloads the datasets DaLiA, WESAD, BAMI-1 and 
 ```
 sh download_data.sh
 ```
-- Note that WESAD does not natively include  ground truth HR. Labels can be generated from the provided ECG recordings instead.
+- Note that WESAD does not natively include ground-truth HR. Labels can be generated from the provided ECG recordings instead.
 - Support for the IEEE datasets is implemented, but the original data format seems to be no longer available. You can download it in the new format under https://zenodo.org/record/3902710#.ZGM9l3ZBy3C and restructure/convert the files or implement your own file reader.
 
 Training and Inference
@@ -49,7 +49,7 @@ Run the following in your terminal:
 python train_eval.py --data_dir ${DATA_PATH} --dataset dalia 
 ```
 
-This will run LoSo cross-validation on the DaLiA dataset. On a modern GPU, expect one full run to take roughly 10-14 hours.
+This will run LoSo cross-validation on the DaLiA dataset. On a modern GPU, expect one full run to take roughly 10&ndash;14 hours.
 Results, that is the MAEs, predictions and models, are saved in the output directory, which can be specified with the `--out_dir` argument. *Note that you may have to reinstall h5py in order for the models to be saved correctly.*
 
 We highly recommend that you use Weights&Biases to monitor model training. Make sure to log into W&B in the console and then simply add the argument `--use_wandb` to save additional plots and logging information.
@@ -59,12 +59,12 @@ Citation
 ----------
 If your find our paper or codes useful, please cite our work:
 
-    @InProceedings{bieri_741,
-        title = {BeliefPPG: Uncertainty-aware heart rate estimation from PPG signals via belief propagation},
-        author = {Bieri, Valentin and Streli, Paul and Demirel, Berken Utku and Holz, Christian},
-        booktitle={},
-        year={2023},
-        organization={}
+    @InProceedings{uai2023-beliefppg,
+        author={Bieri, Valentin and Streli, Paul and Demirel, Berken Utku and Holz, Christian},
+        title = {BeliefPPG: Uncertainty-aware Heart Rate Estimation from PPG signals via Belief Propagation},
+        year = {2023},
+        organization={PMLR},
+        booktitle = {Conference on Uncertainty in Artificial Intelligence (UAI)}
     }
 
 License and Acknowledgement
