@@ -70,7 +70,7 @@ def parse_args():
         "--n_bins",
         type=int,
         default=64,
-        choices=[64, 256],  # @TODO add support for dim-256 model with additional depth
+        choices=[64, 256],
         help="Number of bins to subdivide HR space into",
     )
     parser.add_argument(
@@ -98,7 +98,7 @@ def parse_args():
         choices=[
             "gauss",
             "laplace",
-        ],  # @TODO add uniform prior (np.ones / dim**2)
+        ],
         help="Prior for belief propagation",
     )
     parser.add_argument(
@@ -135,7 +135,7 @@ def parse_args():
         "--seed",
         type=int,
         default=12,
-        help="Seed for full determinism.",  # @TODO make this optional
+        help="Seed for full determinism.",
     )
 
     return parser.parse_args()

@@ -40,7 +40,7 @@ def prepare_session_spec(
     """
     fft_winsize = (
         535 if n_bins == 64 else (4 * 535 - 5)
-    )  # @TODO calculate with formula, round to 2**x
+    )
     ppgs = []
     ppg_wsize = win_size * ppg_freq
     for i in range(0, len(ppg) - ppg_wsize + 1, ppg_freq * stride):
