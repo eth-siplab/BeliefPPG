@@ -101,7 +101,13 @@ def parse_args():
         ],  # @TODO add uniform prior (np.ones / dim**2)
         help="Prior for belief propagation",
     )
-
+    parser.add_argument(
+        "--uncertainty",
+        type=str,
+        default="entropy",
+        choices=["entropy", "std"],
+        help="Metric for predictive uncertainty",
+    )
     parser.add_argument(
         "--batch_size",
         type=int,

@@ -209,7 +209,7 @@ def train_eval(args):
             np.array(list(ds.map(lambda x, y: y))) for ds in train_split
         ]  # we could include val_split here, as long as we don't use test sesh
         prior_layer = PriorLayer(
-            args.n_bins, args.min_hz, args.max_hz, is_online=True, return_probs=False
+            args.n_bins, args.min_hz, args.max_hz, is_online=True, return_probs=False, uncert=args.uncertainty
         )
         prior_layer.fit_layer(train_ys, distr=args.prior)
 

@@ -128,7 +128,7 @@ class PriorLayer(tf.keras.layers.Layer):
         :param ps: tf.tensor of shape (n_samples, n_bins) containing probabilities
         :return: probs : tf.tensor of same shape, only returned if return_probs=True
                  E_x : tf.tensor of shape (n_samples,) containing the expected HR, only if return_probs=False
-                 std : tf.tensor of shape (n_samples,) containing std of the distribution as uncertainty measure
+                 uncert : tf.tensor of shape (n_samples,) containing est. uncertainty of the prediction
         """
         probs = self._propagate_sumprod(ps)
 
@@ -138,7 +138,7 @@ class PriorLayer(tf.keras.layers.Layer):
             E_x2 = tf.reduce_sum(probs * self.bins[None, :] ** 2, axis=1)
             uncert = tf.sqrt(E_x2 - E_x**2)
         elif self.uncert == "entropy":
-            uncert = tf.reduce_sum(probs * tf.math.log(probs), axis=1)
+            uncert = -tf.reduce_sum(probs * tf.math.log(probs + 1e-10), axis=1)
         else:
             raise NotImplementedError(f"Unknown uncertainty measure: {self.uncert}")
 
