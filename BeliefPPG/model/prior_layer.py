@@ -29,9 +29,9 @@ class PriorLayer(tf.keras.layers.Layer):
         self.max_hz = max_hz
         self.is_online = is_online
         self.return_probs = return_probs
-        self.bins = tf.constant([self._hr(i) for i in range(0, dim)], "float32")
+        self.bins = tf.constant([self.hr(i) for i in range(0, dim)], "float32")
 
-    def _hr(self, i):
+    def hr(self, i):
         """
         Helper function to calculate heart rate based on bin index
         :param i: bin index
@@ -85,7 +85,7 @@ class PriorLayer(tf.keras.layers.Layer):
                         ) - laplace.cdf(abs(i - j) - 1, mu, sigma)
                     elif distr == "gauss":
                         log_diffs = [
-                            np.log(self._hr(i1)) - np.log(self._hr(i2))
+                            np.log(self.hr(i1)) - np.log(self.hr(i2))
                             for i1 in (i - 0.5, i + 0.5)
                             for i2 in (j - 0.5, j + 0.5)
                         ]

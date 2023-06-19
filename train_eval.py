@@ -15,6 +15,7 @@ from BeliefPPG.datasets.pipeline_generator import get_sessions, join_sessions
 from BeliefPPG.model.belief_ppg import build_belief_ppg
 from BeliefPPG.model.binned_regression_loss import BinnedRegressionLoss
 from BeliefPPG.model.prior_layer import PriorLayer
+from BeliefPPG.model.viterbi_decoding import decode_viterbi
 from BeliefPPG.util.args import parse_args
 from BeliefPPG.util.augmentations import add_augmentations
 from BeliefPPG.util.callbacks import get_callbacks
@@ -91,10 +92,11 @@ def set_seed(seed):
     np.random.seed(seed)
 
 
-def evaluate_and_log(y_pred, y_true, uncertainty, sess_name, out_path, use_wandb):
+def evaluate_and_log(y_pred, y_pred_viterbi, y_true, uncertainty, sess_name, out_path, use_wandb):
     """
     Evaluates test predictions and logs to out_path as well as wandb
-    :param y_pred: np.ndarray of shape (n_pred,)
+    :param y_pred: np.ndarray of shape (n_pred,), result obtained from sum-product message passing
+    :param y_pred_viterbi: np.ndarray of shape (n_pred,), result obtained from max-product message passing
     :param y_true: np.ndarray of shape (n_pred,)
     :param uncertainty: np.ndarray of shape (n_pred,)
     :param sess_name: string descriptor
@@ -105,6 +107,8 @@ def evaluate_and_log(y_pred, y_true, uncertainty, sess_name, out_path, use_wandb
     test_r2 = r2_score(y_true, y_pred)
     spearman_res = spearmanr(np.abs(y_true - y_pred), uncertainty)
 
+    viterbi_mae = mean_absolute_error(y_true, y_pred_viterbi)
+
     # log results
     logging.info(r"Session %s MAE %f" % (sess_name, test_mae))
     if use_wandb:
@@ -112,10 +116,13 @@ def evaluate_and_log(y_pred, y_true, uncertainty, sess_name, out_path, use_wandb
         wandb.log({f"test-r2": test_r2})
         wandb.log({f"spearman-corr": spearman_res.correlation})
         wandb.log({f"prediction": y_pred})
+        wandb.log({f"test-mae-offline": viterbi_mae})
+        wandb.log({f"prediction-offline": y_pred_viterbi})
         aerr = np.abs(y_true - y_pred)
         for j in range(len(y_true)):
             wandb.log({f"truth": y_true[j]})
             wandb.log({f"pred": y_pred[j]})
+            wandb.log({f"pred-offline": y_pred_viterbi[j]})
             wandb.log({f"certainty": -uncertainty[j]})
             wandb.log({f"abs-error": aerr[j]})
 
@@ -123,6 +130,7 @@ def evaluate_and_log(y_pred, y_true, uncertainty, sess_name, out_path, use_wandb
     if not os.path.isdir(out_path):
         os.makedirs(out_path)
     np.savetxt(os.path.join(out_path, "y_pred.csv"), y_pred, delimiter=",")
+    np.savetxt(os.path.join(out_path, "y_pred_offline.csv"), y_pred_viterbi, delimiter=",")
     np.savetxt(os.path.join(out_path, "y_true.csv"), y_true, delimiter=",")
     np.savetxt(os.path.join(out_path, "uncertainty.csv"), uncertainty, delimiter=",")
 
@@ -211,11 +219,13 @@ def train_eval(args):
 
         # predict
         y_pred, uncertainty = inference_model.predict(test_sesh.batch(args.batch_size))
+        y_pred_raw = model.predict(test_sesh.batch(args.batch_size))
+        y_pred_viterbi = decode_viterbi(y_pred_raw, prior_layer)
         y_true = np.array(list(test_sesh.map(lambda x, y: y)))
 
         # evaluate & log
         test_mae = evaluate_and_log(
-            y_pred, y_true, uncertainty, names[test_ixes[0]], out_path, args.use_wandb
+            y_pred, y_pred_viterbi, y_true, uncertainty, names[test_ixes[0]], out_path, args.use_wandb
         )
         maes[names[test_ixes[0]]] = [test_mae]
 
