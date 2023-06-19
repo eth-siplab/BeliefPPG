@@ -11,7 +11,7 @@ class PriorLayer(tf.keras.layers.Layer):
      When added, the model produces either contextualized probabilities or BPM HR estimates as output.
     """
 
-    def __init__(self, dim, min_hz, max_hz, is_online, return_probs, **kwargs):
+    def __init__(self, dim, min_hz, max_hz, is_online, return_probs, uncert="entropy", **kwargs):
         """
         Construct the Prior Layer translating instantaneous bin probabilities into contextualized HR predictions.
         :param dim: number of bins
@@ -19,6 +19,7 @@ class PriorLayer(tf.keras.layers.Layer):
         :param max_hz: maximal predictable frequency
         :param is_online: whether sum-product message passing (True) or viterbi decoding (False) should be applied
         :param return_probs: returns contextualized bin probabilities if set to True, HR estimates in BPM otherwise.
+        :param uncert: The uncertainty measure to use. One of ["entropy", "std"].
         :param kwargs: passed to parent class
         """
         super(PriorLayer, self).__init__(**kwargs)
@@ -29,6 +30,7 @@ class PriorLayer(tf.keras.layers.Layer):
         self.max_hz = max_hz
         self.is_online = is_online
         self.return_probs = return_probs
+        self.uncert = uncert
         self.bins = tf.constant([self.hr(i) for i in range(0, dim)], "float32")
 
     def hr(self, i):
@@ -129,16 +131,21 @@ class PriorLayer(tf.keras.layers.Layer):
                  std : tf.tensor of shape (n_samples,) containing std of the distribution as uncertainty measure
         """
         probs = self._propagate_sumprod(ps)
-        # @TODO add offline decoding variant
 
         E_x = tf.reduce_sum(probs * self.bins[None, :], axis=1)
-        E_x2 = tf.reduce_sum(probs * self.bins[None, :] ** 2, axis=1)
-        std = tf.sqrt(E_x2 - E_x**2)
+
+        if self.uncert == "std":
+            E_x2 = tf.reduce_sum(probs * self.bins[None, :] ** 2, axis=1)
+            uncert = tf.sqrt(E_x2 - E_x**2)
+        elif self.uncert == "entropy":
+            uncert = tf.reduce_sum(probs * tf.math.log(probs), axis=1)
+        else:
+            raise NotImplementedError(f"Unknown uncertainty measure: {self.uncert}")
 
         if self.return_probs:
-            return probs, std
+            return probs, uncert
         else:
-            return E_x, std
+            return E_x, uncert
 
     def get_config(self):
         """
