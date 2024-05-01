@@ -5,14 +5,15 @@ from argparse import Namespace
 import numpy as np
 import tensorflow as tf
 
-from BeliefPPG.datasets.file_reader import (
+from beliefppg.datasets.file_reader import (
     load_bami_1,
     load_bami_2,
     load_dalia,
     load_ieee,
     load_wesad,
 )
-from BeliefPPG.util.preprocessing import (
+from beliefppg.model.config import InputConfig
+from beliefppg.util.preprocessing import (
     get_strided_windows,
     process_window_spec_acc,
     process_window_spec_ppg,
@@ -111,25 +112,40 @@ def get_sessions(args: Namespace):
                 representing (input, labels) where input=(spec_feat, time_feat) and the label is the BPM HR value.
             session_names is a list of corresponding session descriptors
     """
-    if args.dataset == "dalia":
-        sessions, names, ppg_freq, acc_freq = load_dalia(args.data_dir)
-    elif args.dataset == "wesad":
-        sessions, names, ppg_freq, acc_freq = load_wesad(args.data_dir)
-    elif args.dataset == "bami-1":
-        sessions, names, ppg_freq, acc_freq = load_bami_1(args.data_dir)
-    elif args.dataset == "bami-2":
-        sessions, names, ppg_freq, acc_freq = load_bami_2(args.data_dir)
-    elif args.dataset == "bami":
-        sessions1, names1, ppg_freq, acc_freq = load_bami_1(args.data_dir)
-        sessions2, names2, ppg_freq, acc_freq = load_bami_2(args.data_dir)
-        sessions, names = sessions1 + sessions2, names1 + names2
-    elif args.dataset == "ieee":
-        sessions, names, ppg_freq, acc_freq = load_ieee(args.data_dir)
-    else:
-        raise NotImplementedError(r"Dataset %s not supported (yet)" % args.dataset)
 
-    window_len = 8  # hard-code window length in seconds to match the labels
-    stride = 2  # window stride in seconds
+    if args.dataset == "all":
+        datasets = ["dalia", "wesad", "bami-1", "bami-2", "ieee"]
+    elif args.dataset == "bami":
+        datasets = ["bami-1", "bami-2"]
+    else:
+        datasets = [args.dataset]
+
+    sessions = []
+    names = []
+    ppg_freqs = []
+    acc_freqs = []
+
+    for dataset in datasets:
+        if dataset == "dalia":
+            sessions_, names_, ppg_freq, acc_freq = load_dalia(args.data_dir)
+        elif dataset == "wesad":
+            sessions_, names_, ppg_freq, acc_freq = load_wesad(args.data_dir)
+        elif dataset == "bami-1":
+            sessions_, names_, ppg_freq, acc_freq = load_bami_1(args.data_dir)
+        elif dataset == "bami-2":
+            sessions_, names_, ppg_freq, acc_freq = load_bami_2(args.data_dir)
+        elif dataset == "ieee":
+            sessions_, names_, ppg_freq, acc_freq = load_ieee(args.data_dir)
+        else:
+            raise NotImplementedError(r"Dataset %s not supported (yet)" % args.dataset)
+
+        sessions.extend(sessions_)
+        names.extend(names_)
+        ppg_freqs.extend([ppg_freq] * len(sessions_))
+        acc_freqs.extend([acc_freq] * len(sessions_))
+
+    window_len = InputConfig.WINSIZE  # hard-code window length in seconds to match the labels
+    stride = InputConfig.STRIDE  # window stride in seconds
 
     pool = multiprocessing.Pool()
 
@@ -148,7 +164,9 @@ def get_sessions(args: Namespace):
                 args.min_hz,
                 args.max_hz,
             )
-            for (ppg, acc, hr) in sessions
+            for ((ppg, acc, hr), ppg_freq, acc_freq) in zip(sessions,
+                                                            ppg_freqs,
+                                                            acc_freqs)
         ),
     )
     spectral_dss = map(tf.data.Dataset.from_tensor_slices, spectral_feat)
@@ -162,7 +180,8 @@ def get_sessions(args: Namespace):
         prepare_session_time,
         (
             (ppg, ppg_freq, args.freq, args.filter_lowcut, args.filter_highcut)
-            for (ppg, acc, hr) in sessions
+            for ((ppg, acc, hr), ppg_freq) in zip(sessions,
+                                                  ppg_freqs)
         ),
     )
     time_winsize = window_len + (args.n_frames - 1) * stride

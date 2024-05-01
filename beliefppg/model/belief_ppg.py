@@ -15,8 +15,9 @@ from keras.layers import (
     UpSampling1D,
 )
 
-from BeliefPPG.model.positional_encoding import PositionalEncoding
-from BeliefPPG.model.timedomain_backbone import get_timedomain_backbone
+from beliefppg.model.config import InputConfig
+from beliefppg.model.positional_encoding import PositionalEncoding
+from beliefppg.model.timedomain_backbone import get_timedomain_backbone
 
 
 def attention_block_1d(x, g, inter_channel):
@@ -204,15 +205,18 @@ def hybrid_unet(
     return x
 
 
-def build_belief_ppg(args: Namespace):
+def build_belief_ppg(n_frames: int, n_bins: int, freq: int):
     """
     Wrapper function constructing the BeliefPPG architecture
-    :param args: Namespace object containing config
+
+    :param n_frames: The number of frames to consider in the spectrogram input.
+    :param n_bins: The number of frequency bins in each frame of the spectrogram.
+    :param freq: The frequency resolution of the time input.
     :return: tf.kers.models.Model the uncompiled functional model
     """
-    spec_input = tf.keras.layers.Input(shape=(args.n_frames, args.n_bins, 2))
+    spec_input = tf.keras.layers.Input(shape=(n_frames, n_bins, 2))
     time_input = tf.keras.layers.Input(
-        shape=(args.freq * (args.n_frames - 1) * 2 + args.freq * 8, 1)
+        shape=(freq * (n_frames - 1) * InputConfig.STRIDE + freq * InputConfig.WINSIZE, 1)
     )
 
     logits = hybrid_unet(spec_input, time_input)

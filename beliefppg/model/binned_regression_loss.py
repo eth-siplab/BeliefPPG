@@ -27,11 +27,13 @@ class BinnedRegressionLoss(tf.keras.losses.Loss):
         """
         super().__init__(name=name, **kwargs)
         self.sigma_y = sigma_y
-        self.min_bpm = min_hz * 60
-        self.max_bpm = max_hz * 60
+        self.min_hz = min_hz
+        self.max_hz = max_hz
+        min_bpm = min_hz * 60
+        max_bpm = max_hz * 60
         self.dim = dim
         self.bin_edges = tf.range(
-            self.min_bpm, self.max_bpm, (self.max_bpm - self.min_bpm) / self.dim
+            min_bpm, max_bpm, (max_bpm - min_bpm) / self.dim
         )
 
     @tf.function
@@ -66,8 +68,8 @@ class BinnedRegressionLoss(tf.keras.losses.Loss):
         """
         config = {
             "sigma_y": self.sigma_y,
-            "min_bpm": self.min_bpm,
-            "max_bpm": self.max_bpm,
+            "min_hz": self.min_hz,
+            "max_hz": self.max_hz,
             "dim": self.dim,
         }
         base_config = super().get_config()

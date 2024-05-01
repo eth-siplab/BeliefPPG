@@ -8,7 +8,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
     Directly adapted from https://www.tensorflow.org/text/tutorials/transformer.
     """
 
-    def __init__(self, seqlen, d_model, num_dims=3):
+    def __init__(self, seqlen, d_model, num_dims=3, **kwargs):
         """
         Initialize the positional encoding layer.
         Assumes the input has shape (batch, blocks, inner) or (batch, _ , blocks, inner)
@@ -16,7 +16,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
         :param d_model: dimension of the encoding (needs to match block size)
         :param num_dims: number of input dimensions to enable easy broadcasting
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.seqlen = seqlen
         self.d_model = d_model
         self.num_dims = num_dims
@@ -47,7 +47,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
         :param x: tf.tensor of shape (..., n_blocks, block_size)
         :return: tf.tensor of same shape
         """
-        # This factor sets the relative scale of the embedding and positonal_encoding.
+        # This factor sets the relative scale of the embedding and positional_encoding.
         x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
         if self.num_dims == 3:
             x = x + self.pos_encoding[tf.newaxis, tf.newaxis, :, :]

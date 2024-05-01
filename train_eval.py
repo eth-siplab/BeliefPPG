@@ -1,5 +1,6 @@
 import logging
 import os
+from itertools import groupby
 
 import numpy as np
 import pandas as pd
@@ -10,18 +11,17 @@ from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import KFold
 
-import BeliefPPG
-from BeliefPPG.datasets.pipeline_generator import get_sessions, join_sessions
-from BeliefPPG.model.belief_ppg import build_belief_ppg
-from BeliefPPG.model.binned_regression_loss import BinnedRegressionLoss
-from BeliefPPG.model.prior_layer import PriorLayer
-from BeliefPPG.model.viterbi_decoding import decode_viterbi
-from BeliefPPG.util.args import parse_args
-from BeliefPPG.util.augmentations import add_augmentations
-from BeliefPPG.util.callbacks import get_callbacks
+import beliefppg
+from beliefppg.datasets.pipeline_generator import get_sessions, join_sessions
+from beliefppg.model.belief_ppg import build_belief_ppg
+from beliefppg.model.binned_regression_loss import BinnedRegressionLoss
+from beliefppg.model.prior_layer import PriorLayer
+from beliefppg.util.args import parse_args
+from beliefppg.util.augmentations import add_augmentations
+from beliefppg.util.callbacks import get_callbacks
 
 
-def generate_split(sequences):
+def generate_loso_split(sequences):
     """
     Generates a leave-one-out split of the input array based on the
     original DaLiA paper [1], subdividing the sequences into train (n-3), validation (2) and test (1) sets
@@ -52,6 +52,51 @@ def generate_split(sequences):
             )
             rest = np.roll(rest, 1)
 
+    # assert consistency
+    for f in folds:
+        # we use them all
+        assert set(sequences) == set(f[0]).union(set(f[1])).union(set(f[2]))
+        # no duplicates
+        assert sum(map(len, f)) == len(sequences)
+        # they are pairwise disjoint
+        assert set(f[0]).isdisjoint(set(f[1]))
+        assert set(f[2]).isdisjoint(set(f[1]))
+        assert set(f[0]).isdisjoint(set(f[2]))
+    return folds
+
+
+def generate_train_split(names):
+    """
+    Generates one fold for training a model with a session from each dataset for validation and testing,
+    while using the remaining sessions for training.
+
+    :param sequences: list[object]
+    :return: list[tuple[list[object], list[object], list[object]]] i.e. a list of tuples of lists of objects.
+            Each list item consists of three lists representing a split. A split is a 3-tuple of lists representing
+            train, val & test set respectively.
+    """
+
+    def key_func(x):
+        return x.split("_", 1)[0]
+
+    sorted_names = sorted(names, key=key_func)
+    grouped_names = {key: list(group) for key, group in groupby(sorted_names, key=key_func)}
+    grouped_indexes = {key: [names.index(name) for name in group] for key, group in grouped_names.items()}
+
+    train = []
+    val = []
+    test = []
+
+    for key, indexes in grouped_indexes.items():
+        # take random element from each group for validation and one for testing
+        indexes_ = np.random.choice(indexes, 2, replace=False)
+        val.append(indexes_[0])
+        test.append(indexes_[1])
+        train.extend([index for index in indexes if index not in indexes_])
+
+    folds = [(train, val, test)]
+
+    sequences = list(range(len(names)))
     # assert consistency
     for f in folds:
         # we use them all
@@ -139,7 +184,7 @@ def evaluate_and_log(y_pred, y_pred_viterbi, y_true, uncertainty, sess_name, out
 
 def train_eval(args):
     """
-    Runs leave-one-session-out cross-validation on a specified dataset. That is, it creates folds,
+    Performs a training-validation scheme specified by the mode parameter on a specified dataset. That is, it creates folds,
     then builds a model for each fold and trains it on the training set until it converges w.r.t the validation set.
     Then it fits & adds a prior layer before predicting & evaluating on the test set.
     Monitors progress on W&B if configured. Saves predicions, stats, and model weights in the output dir.
@@ -151,32 +196,37 @@ def train_eval(args):
 
     sessions, names = get_sessions(args)
 
+    if args.mode == "loso":
+        folds = generate_loso_split(np.arange(0, len(sessions)))
+    elif args.mode == "train":
+        folds = generate_train_split(names)
+    else:
+        raise NotImplementedError(f"Mode {args.mode} not implemented")
+
     maes = {}
-
-    folds = generate_split(np.arange(0, len(sessions)))
-
     for i, (train_ixes, val_ixes, test_ixes) in enumerate(folds):
-        train_split, val_split, test_sesh = (
+        train_split, val_split, test_split = (
             sessions[train_ixes],
             sessions[val_ixes],
-            sessions[test_ixes[0]],
+            sessions[test_ixes],
         )
 
-        out_path = os.path.join(args.out_dir, f"{args.dataset}-{names[test_ixes[0]]}")
+        test_split_name = "_".join([names[idx] for idx in test_ixes])
+        out_path = os.path.join(args.out_dir, f"{args.dataset}-{test_split_name}")
         logging.info(f"Split {i+1}/{len(folds)}")
-        logging.info(f"Test session: {args.dataset}-{names[test_ixes[0]]}")
+        logging.info(f"Test session: {args.dataset}-{test_split_name}")
         logging.info(f"Saving output under {out_path}")
 
         if args.use_wandb:
             wandb.init(
                 project="BeliefPPG",
-                name=f"{args.dataset}-{names[test_ixes[0]]}",
+                name=f"{args.dataset}-{test_split_name}",
                 config=vars(args),
                 dir=args.out_dir,
             )
 
         # prepare tf.data pipeline
-        train_ds = BeliefPPG.datasets.pipeline_generator.join_sessions(
+        train_ds = join_sessions(
             train_split, shuffle=True
         )
         val_ds = join_sessions(val_split, shuffle=False)
@@ -187,7 +237,7 @@ def train_eval(args):
             train_ds = add_augmentations(train_ds, args)
 
         # build model
-        model = build_belief_ppg(args)
+        model = build_belief_ppg(args.n_frames, args.n_bins, args.freq)
         loss_fn = BinnedRegressionLoss(
             args.n_bins, args.min_hz, args.max_hz, args.sigma_y
         )
@@ -218,21 +268,23 @@ def train_eval(args):
         inference_model = Model(model.input, out)
 
         # predict
-        y_pred, uncertainty = inference_model.predict(test_sesh.batch(args.batch_size))
-        y_pred_raw = model.predict(test_sesh.batch(args.batch_size))
-        y_pred_viterbi = decode_viterbi(y_pred_raw, prior_layer)
-        y_true = np.array(list(test_sesh.map(lambda x, y: y)))
+        test_ds = join_sessions(test_split, shuffle=False)
+        y_pred, uncertainty = inference_model.predict(test_ds.batch(args.batch_size))
+        inference_model.get_layer('prior_layer').set_online(False)
+        y_pred_viterbi, _ = inference_model.predict(test_ds.batch(args.batch_size))
+        y_true = np.array(list(test_ds.map(lambda x, y: y)))
 
         # evaluate & log
         test_mae = evaluate_and_log(
             y_pred, y_pred_viterbi, y_true, uncertainty, names[test_ixes[0]], out_path, args.use_wandb
         )
-        maes[names[test_ixes[0]]] = [test_mae]
+        maes[test_split_name] = [test_mae]
 
         # save model
         try:
-            model.save(os.path.join(out_path, "raw_model.h5"))
-            inference_model.save(os.path.join(out_path, "inference_model.h5"))
+            model.save(os.path.join(out_path, "raw_model.keras"))
+            inference_model.get_layer('prior_layer').set_online(True)
+            inference_model.save(os.path.join(out_path, "inference_model.keras"))
         except ImportError:
             logging.warning(
                 "Failed to save model. ImportError: check your h5py installation."

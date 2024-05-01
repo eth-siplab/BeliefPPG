@@ -1,0 +1,1 @@
+from beliefppg.inference.inference import infer_hr

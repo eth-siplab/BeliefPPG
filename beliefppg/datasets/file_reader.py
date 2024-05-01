@@ -33,7 +33,7 @@ def load_dalia(data_dir):
         ppg = ds[b"signal"][b"wrist"][b"BVP"]
         hr = ds[b"label"]
         signals.append((ppg, acc, hr))
-        names.append(os.path.split(fname)[1][:-4])
+        names.append("DaLia_" + os.path.split(fname)[1][:-4])
         nsamples += len(ppg) / (60 * ppg_freq)
 
     assert nsamples > 0, r"Did not find any files matching path %s" % tpl
@@ -74,7 +74,7 @@ def load_wesad(data_dir):
             delimiter=",",
         )
         signals.append((ppg, acc, hr))
-        names.append(name)
+        names.append("WESAD_" + name)
         nsamples += len(ppg) / (60 * ppg_freq)
 
     assert nsamples > 0, r"Did not find any files matching path %s" % tpl
@@ -222,7 +222,7 @@ def load_ieee(data_dir, load_train=True, load_extra=False, load_test=False):
         acc = np.stack([df["acc1"], df["acc2"], df["acc3"]], axis=-1)
 
         signals.append((ppg, acc, hr))
-        names.append(os.path.split(fname)[1][:-4])
+        names.append("IEEE_"+os.path.split(fname)[1][:-4])
         nsamples += len(ppg) / (60 * ppg_freq)
 
     assert nsamples > 0, r"Did not find any files matching paths %s %s %s" % (

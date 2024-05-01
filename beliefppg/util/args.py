@@ -20,7 +20,7 @@ def parse_args():
         "--dataset",
         type=str,
         default="dalia",
-        choices=["dalia", "wesad", "bami", "bami-1", "bami-2", "ieee"],
+        choices=["dalia", "wesad", "bami", "bami-1", "bami-2", "ieee", "all"],
         help="Dataset to train/evaluate on",
     )
     parser.add_argument(
@@ -136,6 +136,13 @@ def parse_args():
         type=int,
         default=12,
         help="Seed for full determinism.",
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="loso",
+        choices=["loso", "train"],
+        help="Specifies the validation scheme. 'loso' performs a leave-one-subject-out validation, while 'train' uses a single training fold where one session from each dataset is reserved for validation and testing."
     )
 
     return parser.parse_args()
