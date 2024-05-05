@@ -15,7 +15,7 @@ from beliefppg.util.preprocessing import get_strided_windows
 
 def infer_hr(ppg: np.array, acc: np.array, ppg_freq: int, acc_freq: int, decoding: str = "sumproduct",
              batch_size: int = 128, filter_lowcut: float = 0.1, filter_highcut: float = 18.0,
-             use_gpu: bool = False, model_path: str = None,) -> Tuple[np.array, np.array]:
+             use_gpu: bool = False, model_path: str = None, use_time_backbone=True) -> Tuple[np.array, np.array]:
     """
     Infers heart rate from PPG and accelerometer data using the specified decoding method.
     :param ppg: PPG signal data with shape (n_samples, n_channels).
@@ -57,7 +57,10 @@ def infer_hr(ppg: np.array, acc: np.array, ppg_freq: int, acc_freq: int, decodin
     # Load default model if model_path is not provided
     if model_path is None:
         model_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(model_dir, "inference_model.keras")
+        if use_time_backbone:
+            model_path = os.path.join(model_dir, "inference_model.keras")
+        else:
+            model_path = os.path.join(model_dir, "inference_model_notimebackbone.keras")
 
     # Load the inference model
     inference_model = load_inference_model(model_path)

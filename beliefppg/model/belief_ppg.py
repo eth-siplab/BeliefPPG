@@ -1,23 +1,81 @@
 from argparse import Namespace
 
-import keras.backend as K
 import tensorflow as tf
-from keras.layers import (
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import (
+    Add,
     Activation,
     Attention,
+    Concatenate,
     Conv1D,
     Conv2D,
     Dense,
     Dropout,
     Flatten,
-    Lambda,
     MaxPooling1D,
+    Multiply,
+    Permute,
+    Reshape,
     UpSampling1D,
-)
+    )
 
 from beliefppg.model.config import InputConfig
 from beliefppg.model.positional_encoding import PositionalEncoding
 from beliefppg.model.timedomain_backbone import get_timedomain_backbone
+
+
+class AveragePooling1D(Layer):
+    def __init__(self, dim, **kwargs):
+        super().__init__(**kwargs)
+        self.dim = dim
+
+    def call(self, inputs):
+        return tf.reduce_mean(inputs, axis=self.dim)
+
+    def get_config(self):
+        config = super().get_config()
+        config["dim"] = self.dim
+        return config
+
+
+class FlexibleAttention(Layer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.attention = Attention()
+
+    def build(self, input_shape):
+        # Check if the input is a list of tensors
+        if isinstance(input_shape, list):
+            # Assume each item in the list has the same shape
+            self.use_reshaping = len(input_shape[0]) > 3
+            if self.use_reshaping:
+                # Compute intermediate and original shapes for the first tensor in the list
+                self.intermediate_shape = (-1, input_shape[0][-2], input_shape[0][-1])
+                self.original_shape = [-1,] + [i for i in input_shape[0][1:-2]] + [input_shape[0][-2], input_shape[0][-1]]
+        else:
+            self.use_reshaping = len(input_shape) > 3
+            if self.use_reshaping:
+                self.intermediate_shape = (-1, input_shape[-2], input_shape[-1])
+                self.original_shape = [-1,] + [i for i in input_shape[1:-2]] + [input_shape[-2], input_shape[-1]]
+        super().build(input_shape)
+
+    def call(self, inputs):
+        if not isinstance(inputs, list):
+            inputs = [inputs, inputs]  # For self-attention if a single tensor is provided
+
+        if self.use_reshaping:
+            reshaped_inputs = [tf.reshape(input_tensor, self.intermediate_shape) for input_tensor in inputs]
+            attention_output = self.attention(reshaped_inputs)
+            output = tf.reshape(attention_output, self.original_shape)
+        else:
+            output = self.attention(inputs)
+
+        return output
+
+    def compute_output_shape(self, input_shape):
+        if isinstance(input_shape, list):
+            return input_shape[0]
+        return input_shape
 
 
 def attention_block_1d(x, g, inter_channel):
@@ -39,7 +97,7 @@ def attention_block_1d(x, g, inter_channel):
 
     # f(?,g_height,g_width,inter_channel)
 
-    f = Activation("relu")(tf.math.add(theta_x, phi_g))
+    f = Activation("relu")(Add()([theta_x, phi_g]))
 
     # psi_f(?,g_height,g_width,1)
 
@@ -50,8 +108,7 @@ def attention_block_1d(x, g, inter_channel):
     # rate(?,x_height,x_width)
 
     # att_x(?,x_height,x_width,x_channel)
-
-    att_x = tf.math.multiply(x, rate)
+    att_x = Multiply()([x, rate])
 
     return att_x
 
@@ -69,22 +126,20 @@ def attention_up_and_concate(
     :return: output of depth level
     """
     if data_format == "channels_first":
-        in_channel = down_layer.get_shape().as_list()[1]
+        in_channel = down_layer.shape[1]
     else:
-        in_channel = down_layer.get_shape().as_list()[-1]
+        in_channel = down_layer.shape[-1]
 
-    # up = Conv2DTranspose(out_channel, [2, 2], strides=[2, 2])(down_layer)
     up = UpSampling1D(size=down_fac)(down_layer)
 
     layer = attention_block_1d(x=layer, g=up, inter_channel=in_channel // 4)
 
     if data_format == "channels_first":
-        my_concat = Lambda(lambda x: K.concatenate([x[0], x[1]], axis=1))
+        combined = Concatenate(axis=1)([up, layer])
     else:
-        my_concat = Lambda(lambda x: K.concatenate([x[0], x[1]], axis=-1))
+        combined = Concatenate(axis=-1)([up, layer])
 
-    concate = my_concat([up, layer])
-    return concate
+    return combined
 
 
 def double_attn(inp, n_frames, n_bins, channels):
@@ -104,14 +159,14 @@ def double_attn(inp, n_frames, n_bins, channels):
 
     # self-attention over time
     x1_freq = PositionalEncoding(seqlen=n_bins, d_model=channels)(x1)
-    freq_attn = Attention()([Dense(channels)(x1_freq), Dense(channels)(x1_freq)])
+    freq_attn = FlexibleAttention()([Dense(channels)(x1_freq), Dense(channels)(x1_freq)])
 
     # self-attention over frequency space
     x1_time = PositionalEncoding(seqlen=n_frames, d_model=channels)(
-        tf.transpose(x1, [0, 2, 1, 3])
+        Permute((2, 1, 3))(x1)
     )
-    time_attn = Attention()([Dense(channels)(x1_time), Dense(channels)(x1_time)])
-    time_attn = tf.transpose(time_attn, [0, 2, 1, 3])
+    time_attn = FlexibleAttention()([Dense(channels)(x1_time), Dense(channels)(x1_time)])
+    time_attn = Permute((2, 1, 3))(time_attn)
 
     return time_attn, freq_attn
 
@@ -145,7 +200,7 @@ def hybrid_unet(
     )
     # reduce mean over 7 time steps
     x = Dense(attn_channels)(spec_input) + time_attn + freq_attn
-    x = tf.reduce_mean(x, axis=1)
+    x = AveragePooling1D(1)(x)
     # resulting dimension (batch, freq_bins, channels)
 
     # U-net code until bottleneck
@@ -170,8 +225,11 @@ def hybrid_unet(
         weight_branch, feat_branch = get_timedomain_backbone(time_input, x.shape[-1])
 
         # concatenate them with bottleneck
-        weight_branch = tf.concat([tf.expand_dims(weight_branch, -2), x], axis=-2)
-        feat_branch = tf.concat([tf.expand_dims(feat_branch, -2), x], axis=-2)
+        shape = weight_branch.shape
+        reshape_layer = Reshape([1, shape[-1]])
+
+        weight_branch = Concatenate(axis=-2)([reshape_layer(weight_branch), x])
+        feat_branch = Concatenate(axis=-2)([reshape_layer(feat_branch), x])
 
         # convolve weight back to shape (1,n_channels), then normalize
         weight_branch = Conv1D(x.shape[-1], 2, activation="tanh")(weight_branch)
@@ -205,7 +263,7 @@ def hybrid_unet(
     return x
 
 
-def build_belief_ppg(n_frames: int, n_bins: int, freq: int):
+def build_belief_ppg(n_frames: int, n_bins: int, freq: int, use_time_backbone=True) -> tf.keras.models.Model:
     """
     Wrapper function constructing the BeliefPPG architecture
 
@@ -219,7 +277,7 @@ def build_belief_ppg(n_frames: int, n_bins: int, freq: int):
         shape=(freq * (n_frames - 1) * InputConfig.STRIDE + freq * InputConfig.WINSIZE, 1)
     )
 
-    logits = hybrid_unet(spec_input, time_input)
+    logits = hybrid_unet(spec_input, time_input, use_time_backbone=use_time_backbone)
 
     out = Activation("softmax")(logits)
     model = tf.keras.models.Model(inputs=[spec_input, time_input], outputs=out)

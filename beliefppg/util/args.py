@@ -80,6 +80,12 @@ def parse_args():
         help="Standard deviation for label smoothing.",
     )
     parser.add_argument(
+        "--no_time_backbone",
+        action="store_false",
+        dest="use_time_backbone",
+        help="Deactivate time-domain backbone",
+    )
+    parser.add_argument(
         "--init_lr",
         type=float,
         default=0.00025,

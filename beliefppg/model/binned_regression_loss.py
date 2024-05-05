@@ -57,6 +57,9 @@ class BinnedRegressionLoss(tf.keras.losses.Loss):
         :param y_pred: predictions for each bin o shape (n_steps, self.dim)
         :return:
         """
+        if len(y_true.shape) == 1:
+            y_true = tf.expand_dims(y_true, -1)
+
         binned_true = self.y_to_bins(y_true)
         losses = tf.keras.metrics.categorical_crossentropy(binned_true, y_pred, axis=-1)
         return tf.reduce_sum(losses)

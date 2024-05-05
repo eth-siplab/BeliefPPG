@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import wandb
-from keras import Model
 from scipy.stats import spearmanr
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import KFold
+from tensorflow.keras import Model
 
 import beliefppg
 from beliefppg.datasets.pipeline_generator import get_sessions, join_sessions
@@ -203,6 +203,7 @@ def train_eval(args):
     else:
         raise NotImplementedError(f"Mode {args.mode} not implemented")
 
+    timestamp = pd.Timestamp.now().strftime("%Y-%m-%d_%H-%M-%S")
     maes = {}
     for i, (train_ixes, val_ixes, test_ixes) in enumerate(folds):
         train_split, val_split, test_split = (
@@ -212,7 +213,8 @@ def train_eval(args):
         )
 
         test_split_name = "_".join([names[idx] for idx in test_ixes])
-        out_path = os.path.join(args.out_dir, f"{args.dataset}-{test_split_name}")
+        out_path = os.path.join(args.out_dir, f"{args.dataset}-{test_split_name}--{timestamp}"
+                                + ("_no_time_backbone" if not args.use_time_backbone else ""))
         logging.info(f"Split {i+1}/{len(folds)}")
         logging.info(f"Test session: {args.dataset}-{test_split_name}")
         logging.info(f"Saving output under {out_path}")
@@ -237,7 +239,7 @@ def train_eval(args):
             train_ds = add_augmentations(train_ds, args)
 
         # build model
-        model = build_belief_ppg(args.n_frames, args.n_bins, args.freq)
+        model = build_belief_ppg(args.n_frames, args.n_bins, args.freq, use_time_backbone=args.use_time_backbone)
         loss_fn = BinnedRegressionLoss(
             args.n_bins, args.min_hz, args.max_hz, args.sigma_y
         )
