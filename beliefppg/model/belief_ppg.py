@@ -24,6 +24,7 @@ from beliefppg.model.positional_encoding import PositionalEncoding
 from beliefppg.model.timedomain_backbone import get_timedomain_backbone
 
 
+@tf.keras.utils.register_keras_serializable('AveragePooling1D')
 class AveragePooling1D(Layer):
     def __init__(self, dim, **kwargs):
         super().__init__(**kwargs)
@@ -38,6 +39,7 @@ class AveragePooling1D(Layer):
         return config
 
 
+@tf.keras.utils.register_keras_serializable('FlexibleAttention')
 class FlexibleAttention(Layer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

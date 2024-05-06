@@ -9,6 +9,7 @@ class TransitionPriorNotSetError(Exception):
         super().__init__(self.message)
 
 
+@tf.keras.utils.register_keras_serializable('PriorLayer')
 class PriorLayer(tf.keras.layers.Layer):
     """
     Implements functionality for the belief propagation / decoding framework.

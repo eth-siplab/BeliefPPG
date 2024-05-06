@@ -28,6 +28,7 @@ def infer_hr(ppg: np.array, acc: np.array, ppg_freq: int, acc_freq: int, decodin
     :param filter_highcut: Highcut frequency for filtering (per default set to 18.0 Hz which is used for training the default model)
     :param use_gpu: Whether to use GPU for inference or not
     :param model_path: Path to the inference model. If None, the default model will be loaded.
+    :param use_time_backbone: Whether to use the time-domain backbone or not
     :return: Tuple of predicted heart rates and uncertainties
     """
 

@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 
+@tf.keras.utils.register_keras_serializable('PositionalEncoding')
 class PositionalEncoding(tf.keras.layers.Layer):
     """
     Implements functionality for additive periodic positional encoding.
