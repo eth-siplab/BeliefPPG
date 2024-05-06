@@ -1,5 +1,8 @@
 import os
-from typing import Tuple
+from typing import (
+    Optional,
+    Tuple,
+)
 
 import numpy as np
 import tensorflow as tf
@@ -13,15 +16,15 @@ from beliefppg.model.load import load_inference_model
 from beliefppg.util.preprocessing import get_strided_windows
 
 
-def infer_hr(ppg: np.array, acc: np.array, ppg_freq: int, acc_freq: int, decoding: str = "sumproduct",
-             use_time_backbone=True, uncertainty: str="entropy",
+def infer_hr(ppg: np.array, ppg_freq: int, acc: Optional[np.ndarray] = None, acc_freq: Optional[int] = None,
+             decoding: str = "sumproduct", use_time_backbone=True, uncertainty: str="entropy",
              batch_size: int = 128, filter_lowcut: float = 0.1, filter_highcut: float = 18.0,
              use_gpu: bool = False, model_path: str = None) -> Tuple[np.array, np.array, np.array]:
     """
     Infers heart rate from PPG and accelerometer data using the specified decoding method.
     :param ppg: PPG signal data with shape (n_samples, n_channels).
-    :param acc: Accelerometer signal data with shape (n_samples, n_channels).
     :param ppg_freq: Sampling frequency of the PPG signal in Hz
+    :param acc: Accelerometer signal data with shape (n_samples, n_channels). BeliefPPG to function without accelerometer signal data, but its accuracy may be reduced.
     :param acc_freq: Sampling frequency of the accelerometer signal in Hz
     :param decoding: Decoding method to use, either "sumproduct" or "viterbi"
     :param use_time_backbone: Whether to use the time-domain backbone or not
@@ -37,7 +40,14 @@ def infer_hr(ppg: np.array, acc: np.array, ppg_freq: int, acc_freq: int, decodin
     # Set TensorFlow to use GPU or CPU based on the parameter
     if ppg.ndim != 2:
         raise ValueError("PPG signal data must have shape (n_samples, n_channels)")
-    if acc.ndim != 2:
+
+    if acc is None:
+        acc = np.zeros((ppg.shape[0], 3))
+        acc_freq = ppg_freq
+        print("Warning: No accelerometer data provided. Estimation accuracy may be reduced.")
+    elif acc_freq is None:
+        raise ValueError("Accelerometer frequency must be provided if accelerometer data is provided.")
+    elif acc.ndim != 2:
         raise ValueError("Accelerometer signal data must have shape (n_samples, n_channels)")
 
     if not isinstance(ppg_freq, int):
