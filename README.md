@@ -49,7 +49,7 @@ from beliefppg import infer_hr
 hr, uncertainty, time_intervals = infer_hr(ppg, sampling_rate)
 ```
 
-The accuracy of BeliefPPG can be enhanced by incorporating accelerometer data alongside the PPG signals. Additionally, users can choose between belief propagation and Viterbi decoding, specify the uncertainty measure, and decide whether to disable the time-domain backbone of the network architecture. Detailed explanations of these features can be found in our [paper](https://static.siplab.org/papers/uai2023-beliefppg-supplementary.pdf).
+The accuracy of BeliefPPG can be enhanced by incorporating accelerometer data alongside the PPG signals. Additionally, users can choose between belief propagation and Viterbi decoding, specify the uncertainty measure, and decide whether to disable the time-domain backbone of the network architecture. Detailed explanations of these features can be found in our [paper](https://static.siplab.org/papers/uai2023-beliefppg.pdf) and [supplementary material](https://static.siplab.org/papers/uai2023-beliefppg-supplementary.pdf).
 ```python
 from beliefppg import infer_hr
 
