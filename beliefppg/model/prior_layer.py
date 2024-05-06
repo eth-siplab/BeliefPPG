@@ -18,7 +18,8 @@ class PriorLayer(tf.keras.layers.Layer):
      When added, the model produces either contextualized probabilities or BPM HR estimates as output.
     """
 
-    def __init__(self, dim, min_hz, max_hz, is_online, return_probs, transition_prior=None, uncert="entropy", **kwargs):
+    def __init__(self, dim, min_hz, max_hz, is_online, return_probs,
+                 transition_prior=None, uncert="entropy", **kwargs):
         """
         Construct the Prior Layer translating instantaneous bin probabilities into contextualized HR predictions.
         :param dim: number of bins
@@ -39,7 +40,12 @@ class PriorLayer(tf.keras.layers.Layer):
         self.max_hz = max_hz
         self.is_online = tf.Variable(is_online, trainable=False, dtype=tf.bool)
         self.return_probs = return_probs
-        self.uncert = uncert
+        if uncert=="entropy":
+            self.is_entropy_uncert = tf.Variable(True, trainable=False, dtype=tf.bool)
+        elif uncert=="std":
+            self.is_entropy_uncert = tf.Variable(False, trainable=False, dtype=tf.bool)
+        else:
+            raise NotImplementedError(f"Unknown uncertainty measure: {uncert}")
         self.bins = tf.constant([self.hr(i) for i in range(0, dim)], "float32")
         if transition_prior is not None:
             self.transition_prior = tf.constant(transition_prior, "float32")
@@ -52,6 +58,18 @@ class PriorLayer(tf.keras.layers.Layer):
         :param is_online: whether to use sum-product message passing (True) or Viterbi decoding (False)
         """
         self.is_online.assign(is_online)
+
+    def set_uncertainty(self, uncert):
+        """
+        Set the uncertainty measure to use.
+        :param uncert: The uncertainty measure to use. One of ["entropy", "std"].
+        """
+        if uncert == "entropy":
+            self.is_entropy_uncert.assign(True)
+        elif uncert == "std":
+            self.is_entropy_uncert.assign(False)
+        else:
+            raise NotImplementedError(f"Unknown uncertainty measure: {uncert}")
 
     def hr(self, i):
         """
@@ -142,7 +160,7 @@ class PriorLayer(tf.keras.layers.Layer):
             i += 1
 
         return output.stack()
-    
+
     @tf.function
     def _update_prob(self, prev_maxprod, curr):
         """
@@ -205,13 +223,12 @@ class PriorLayer(tf.keras.layers.Layer):
         if self.is_online.value():
             probs = self._propagate_sumprod(ps)
             E_x = tf.reduce_sum(probs * self.bins[None, :], axis=1)
-            if self.uncert == "std":
-                E_x2 = tf.reduce_sum(probs * self.bins[None, :] ** 2, axis=1)
-                uncert = tf.sqrt(E_x2 - E_x**2)
-            elif self.uncert == "entropy":
+
+            if self.is_entropy_uncert.value():
                 uncert = -tf.reduce_sum(probs * tf.math.log(probs + 1e-10), axis=1)
             else:
-                raise NotImplementedError(f"Unknown uncertainty measure: {self.uncert}")
+                E_x2 = tf.reduce_sum(probs * self.bins[None, :] ** 2, axis=1)
+                uncert = tf.sqrt(E_x2 - E_x**2)
 
             if self.return_probs:
                 return probs, uncert
@@ -235,7 +252,7 @@ class PriorLayer(tf.keras.layers.Layer):
                 "is_online": self.is_online.numpy(),
                 "return_probs": self.return_probs,
                 "transition_prior": self.transition_prior.numpy().tolist(),
+                "uncert": "entropy" if self.is_entropy_uncert.numpy() else "std",
             }
         )
         return config
-
