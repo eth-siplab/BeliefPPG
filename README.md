@@ -23,13 +23,52 @@ Contents
 
 <b>TL; DR</b>
 <br>
-This repository contains code to run leave-one-session-out cross-validation experiments on multiple supported datasets. Taking multi-channel PPG and Accelerometer signals as input, BeliefPPG predicts the instantaneous heart rate and provides an uncertainty estimate for the prediction.
+This repository contains instructions on how to install BeliefPPG for inference and code to run leave-one-session-out cross-validation experiments on multiple supported datasets. Taking multi-channel PPG and Accelerometer signals as input, BeliefPPG predicts the instantaneous heart rate and provides an uncertainty estimate for the prediction.
 
-
-- [Datasets](#datasets) 
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [Datasets](#datasets)
 - [Training and Inference](#training-and-inference) 
 - [Citation](#citation)
 - [License and Acknowledgement](#license-and-acknowledgement)
+
+Install
+----------
+You can install the pip package using:
+```bash
+pip install beliefppg
+```
+
+Quick Start
+----------
+To start inferring heart rate from PPG and accelerometer data, you first need to import the `infer_hr` function from the `beliefppg` package.
+
+```python
+from beliefppg import infer_hr
+
+sampling_rate = 128  # Hz (sampling rate of accelerometer and ppg sensor)
+
+# Load data item containing the PPG, HR, and IMU signals --- challenging custom dataset
+data = np.load('Data/example.npy', allow_pickle=True).item()
+
+ppg = data['PPG head'].reshape((-1,1)) # reshape ppg to (n_samples, n_channels)
+IMU_X = data['IMU X head']
+IMU_Y = data['IMU Y head']
+IMU_Z = data['IMU Z head']
+acc = np.stack([IMU_X,IMU_X, IMU_Z], axis=-1)
+
+y_pred, y_uncertainty, time_intervals = infer_hr(
+    ppg=ppg, # PPG signal data with shape (n_samples, n_channels)
+    acc=acc, # Accelerometer signal data with shape (n_samples, n_channels)
+    ppg_freq=sampling_rate, # Sampling frequency of the PPG signal in Hz 
+    acc_freq=sampling_rate, # Sampling frequency of the accelerometer signal in Hz
+    decoding='sumproduct', # Decoding method to use, either "sumproduct" or "viterbi"
+    use_time_backbone=True, # Whether to use the time-domain backbone or not
+    uncertainty="std" # Metric for predictive uncertainty, either "entropy" or "std"
+)
+# The function returns predicted heart rates in BPM, uncertainties, and time intervals in seconds.
+```
+For a complete example demonstrating how to use BeliefPPG for heart rate inference, see the [tutorial notebook](https://github.com/eth-siplab/BeliefPPG/blob/master/tutorial.ipynb).
 
 Datasets
 ----------
