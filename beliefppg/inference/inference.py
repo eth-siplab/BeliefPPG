@@ -16,7 +16,7 @@ from beliefppg.util.preprocessing import get_strided_windows
 def infer_hr(ppg: np.array, acc: np.array, ppg_freq: int, acc_freq: int, decoding: str = "sumproduct",
              use_time_backbone=True, uncertainty: str="entropy",
              batch_size: int = 128, filter_lowcut: float = 0.1, filter_highcut: float = 18.0,
-             use_gpu: bool = False, model_path: str = None) -> Tuple[np.array, np.array]:
+             use_gpu: bool = False, model_path: str = None) -> Tuple[np.array, np.array, np.array]:
     """
     Infers heart rate from PPG and accelerometer data using the specified decoding method.
     :param ppg: PPG signal data with shape (n_samples, n_channels).
@@ -31,7 +31,7 @@ def infer_hr(ppg: np.array, acc: np.array, ppg_freq: int, acc_freq: int, decodin
     :param filter_highcut: Highcut frequency for filtering (per default set to 18.0 Hz which is used for training the default model)
     :param use_gpu: Whether to use GPU for inference or not
     :param model_path: Path to the inference model. If None, the default model will be loaded.
-    :return: Tuple of predicted heart rates [BPM], uncertainties [entropy], and time intervals [s]
+    :return: Tuple of predicted heart rates [BPM], uncertainties, and time intervals [s]
     """
 
     # Set TensorFlow to use GPU or CPU based on the parameter
