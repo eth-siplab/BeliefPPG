@@ -37,7 +37,6 @@ def infer_hr(ppg: np.array, ppg_freq: int, acc: Optional[np.ndarray] = None, acc
     :return: Tuple of predicted heart rates [BPM], uncertainties, and time intervals [s]
     """
 
-    # Set TensorFlow to use GPU or CPU based on the parameter
     if ppg.ndim != 2:
         raise ValueError("PPG signal data must have shape (n_samples, n_channels)")
 
@@ -57,6 +56,7 @@ def infer_hr(ppg: np.array, ppg_freq: int, acc: Optional[np.ndarray] = None, acc
         print("Warning: acc_freq is not an integer, converting to integer.")
         acc_freq = round(acc_freq)
 
+    # Set TensorFlow to use GPU or CPU based on the parameter
     if use_gpu:
         physical_devices = tf.config.list_physical_devices('GPU')
         if physical_devices:
