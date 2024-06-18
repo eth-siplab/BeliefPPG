@@ -12,14 +12,15 @@ pip install beliefppg
 Quick Start
 ----------
 To start inferring heart rate from PPG and accelerometer data, you first need to import the `infer_hr` function from the `beliefppg` package.
+The function `infer_hr` returns the estimated heart rate and the corresponding midpoint indices of the windows used for heart rate inference.
 ```python
 from beliefppg import infer_hr
 
 # Example of a simple function call (adjust 'ppg' and 'sampling_rate' as per your data)
-hr, uncertainty, time_intervals = infer_hr(ppg, sampling_rate)
+hr, idxs = infer_hr(ppg, sampling_rate)
 ```
 
-The accuracy of BeliefPPG can be enhanced by incorporating accelerometer data alongside the PPG signals. Additionally, users can choose between belief propagation and Viterbi decoding, specify the uncertainty measure, and decide whether to disable the time-domain backbone of the network architecture. Detailed explanations of these features can be found in our [paper](https://static.siplab.org/papers/uai2023-beliefppg.pdf) and [supplementary material](https://static.siplab.org/papers/uai2023-beliefppg-supplementary.pdf).
+The accuracy of BeliefPPG can be enhanced by incorporating accelerometer data alongside the PPG signals.
 ```python
 from beliefppg import infer_hr
 
@@ -35,7 +36,32 @@ IMU_Y = data['IMU Y head']
 IMU_Z = data['IMU Z head']
 acc = np.stack([IMU_X,IMU_X, IMU_Z], axis=-1)
 
-hr, uncertainty, time_intervals = infer_hr(
+hr, idxs = infer_hr(
+    ppg, # PPG signal data with shape (n_samples, n_channels)
+    ppg_sampling_rate, # Sampling frequency of the PPG signal in Hz
+    acc=acc, # Accelerometer signal data with shape (n_samples, n_channels). BeliefPPG to function without accelerometer signal data, but its accuracy may be reduced.
+    acc_freq=acc_sampling_rate, # Sampling frequency of the accelerometer signal in Hz
+)
+```
+
+The `infer_hr_uncertainty` function from the `beliefppg` package returns the estimated heart rate, uncertainty estimates about the heart rate values, and the bounds [start_ts, end_ts] of the corresponding windows used for heart rate inference in seconds.
+Additionally, users can choose between belief propagation and Viterbi decoding, specify the uncertainty measure, and decide whether to disable the time-domain backbone of the network architecture. Detailed explanations of these features can be found in our [paper](https://static.siplab.org/papers/uai2023-beliefppg.pdf) and [supplementary material](https://static.siplab.org/papers/uai2023-beliefppg-supplementary.pdf).
+```python
+from beliefppg import infer_hr
+
+ppg_sampling_rate = 128  # Hz (sampling rate of ppg sensor)
+acc_sampling_rate = 128 # Hz (sampling rate of accelerometer)
+
+# Load data item containing the PPG, HR, and IMU signals --- challenging custom dataset
+data = np.load('Data/example.npy', allow_pickle=True).item()
+
+ppg = data['PPG head'].reshape((-1,1)) # reshape ppg to (n_samples, n_channels)
+IMU_X = data['IMU X head']
+IMU_Y = data['IMU Y head']
+IMU_Z = data['IMU Z head']
+acc = np.stack([IMU_X,IMU_X, IMU_Z], axis=-1)
+
+hr, uncertainty, time_intervals = infer_hr_uncertainty(
     ppg, # PPG signal data with shape (n_samples, n_channels)
     ppg_sampling_rate, # Sampling frequency of the PPG signal in Hz
     acc=acc, # Accelerometer signal data with shape (n_samples, n_channels). BeliefPPG to function without accelerometer signal data, but its accuracy may be reduced.

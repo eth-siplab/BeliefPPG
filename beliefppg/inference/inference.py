@@ -16,12 +16,12 @@ from beliefppg.model.load import load_inference_model
 from beliefppg.util.preprocessing import get_strided_windows
 
 
-def infer_hr(ppg: np.array, ppg_freq: int, acc: Optional[np.ndarray] = None, acc_freq: Optional[int] = None,
+def infer_hr_uncertainty(ppg: np.array, ppg_freq: int, acc: Optional[np.ndarray] = None, acc_freq: Optional[int] = None,
              decoding: str = "sumproduct", use_time_backbone=True, uncertainty: str="entropy",
              batch_size: int = 128, filter_lowcut: float = 0.1, filter_highcut: float = 18.0,
              use_gpu: bool = False, model_path: str = None) -> Tuple[np.array, np.array, np.array]:
     """
-    Infers heart rate from PPG and accelerometer data using the specified decoding method.
+    Infers heart rate from PPG and accelerometer data using the specified decoding method and returning uncertainty.
     :param ppg: PPG signal data with shape (n_samples, n_channels).
     :param ppg_freq: Sampling frequency of the PPG signal in Hz
     :param acc: Accelerometer signal data with shape (n_samples, n_channels). BeliefPPG to function without accelerometer signal data, but its accuracy may be reduced.
@@ -132,3 +132,18 @@ def infer_hr(ppg: np.array, ppg_freq: int, acc: Optional[np.ndarray] = None, acc
     time_intervals = np.column_stack((time_start, time_start + stride))
 
     return y_pred, uncertainty, time_intervals
+
+
+def infer_hr(ppg: np.array, ppg_freq: int, acc: Optional[np.ndarray] = None, acc_freq: Optional[int] = None) -> Tuple[np.array, np.array]:
+    """
+    Infers heart rate from PPG and accelerometer data.
+    :param ppg: PPG signal data with shape (n_samples, n_channels).
+    :param ppg_freq: Sampling frequency of the PPG signal in Hz
+    :param acc: Accelerometer signal data with shape (n_samples, n_channels). BeliefPPG to function without accelerometer signal data, but its accuracy may be reduced.
+    :param acc_freq: Sampling frequency of the accelerometer signal in Hz
+    :return: Tuple of predicted heart rates [BPM], and time indices [samples] at midpoints of the windows used for HR inference 
+    """
+
+    y_pred, uncertainty, time_intervals = infer_hr_uncertainty(ppg, ppg_freq, acc, acc_freq)
+    midpoint_idxs = (np.mean(time_intervals, axis=-1)*ppg_freq).astype(int)
+    return y_pred, midpoint_idxs
