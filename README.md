@@ -42,7 +42,7 @@ pip install beliefppg
 Quick Start
 ----------
 To start inferring heart rate from PPG and accelerometer data, you first need to import the `infer_hr` function from the `beliefppg` package.
-The function `infer_hr` returns the estimated heart rate and the corresponding midpoint indices of the windows used for HR inference.
+The function `infer_hr` returns the estimated heart rate and the corresponding midpoint indices of the windows used for heart rate inference.
 ```python
 from beliefppg import infer_hr
 
@@ -74,7 +74,7 @@ hr, idxs = infer_hr(
 )
 ```
 
-The `infer_hr_uncertainty` function from the `beliefppg` package returns the estimated heart rate, uncertainty estimates about the heart rate values, and the bounds [start_ts, end_ts] of the corresponding windows used for HR inference in seconds.
+The `infer_hr_uncertainty` function from the `beliefppg` package returns the estimated heart rate, uncertainty estimates about the heart rate values, and the bounds [start_ts, end_ts] of the corresponding windows used for heart rate inference in seconds.
 Additionally, users can choose between belief propagation and Viterbi decoding, specify the uncertainty measure, and decide whether to disable the time-domain backbone of the network architecture. Detailed explanations of these features can be found in our [paper](https://static.siplab.org/papers/uai2023-beliefppg.pdf) and [supplementary material](https://static.siplab.org/papers/uai2023-beliefppg-supplementary.pdf).
 ```python
 from beliefppg import infer_hr
@@ -111,7 +111,7 @@ We provide a shell script which downloads the datasets DaLiA, WESAD, BAMI-1 and 
 ```
 sh download_data.sh
 ```
-- Note that WESAD does not natively include ground-truth HR. Labels can be generated from the provided ECG recordings instead.
+- Note that WESAD does not natively include ground-truth heart rate. Labels can be generated from the provided ECG recordings instead.
 - Support for the IEEE datasets is implemented, but the original data format seems to be no longer available. You can download it in the new format under https://zenodo.org/record/3902710#.ZGM9l3ZBy3C and restructure/convert the files or implement your own file reader.
 
 Training and Inference
