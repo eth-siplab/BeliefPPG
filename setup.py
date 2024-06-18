@@ -5,7 +5,7 @@ with open('README_PyPI.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='beliefppg',
-    version='0.1.3',
+    version='0.2.0',
     packages=find_packages(),
     package_data={'beliefppg': ['inference/inference_model.keras', 'inference/inference_model_notimebackbone.keras']},
     install_requires=[
@@ -24,7 +24,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/eth-siplab/BeliefPPG',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
