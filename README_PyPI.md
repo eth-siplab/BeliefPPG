@@ -47,7 +47,7 @@ hr, idxs = infer_hr(
 The `infer_hr_uncertainty` function from the `beliefppg` package returns the estimated heart rate, uncertainty estimates about the heart rate values, and the bounds [start_ts, end_ts] of the corresponding windows used for heart rate inference in seconds.
 Additionally, users can choose between belief propagation and Viterbi decoding, specify the uncertainty measure, and decide whether to disable the time-domain backbone of the network architecture. Detailed explanations of these features can be found in our [paper](https://static.siplab.org/papers/uai2023-beliefppg.pdf) and [supplementary material](https://static.siplab.org/papers/uai2023-beliefppg-supplementary.pdf).
 ```python
-from beliefppg import infer_hr
+from beliefppg import infer_hr_uncertainty
 
 ppg_sampling_rate = 128  # Hz (sampling rate of ppg sensor)
 acc_sampling_rate = 128 # Hz (sampling rate of accelerometer)
