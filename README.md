@@ -34,7 +34,7 @@ This repository contains instructions on how to install BeliefPPG for inference 
 
 Install
 ----------
-You can install the pip package using:
+You can install the [pip package](https://pypi.org/project/beliefppg/) using:
 ```bash
 pip install beliefppg
 ```
