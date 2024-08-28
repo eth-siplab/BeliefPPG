@@ -5,14 +5,16 @@ with open('README_PyPI.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='beliefppg',
-    version='0.2.0',
+    version='0.3.1',
     packages=find_packages(),
-    package_data={'beliefppg': ['inference/inference_model.keras', 'inference/inference_model_notimebackbone.keras']},
+    package_data={'beliefppg': ['inference/inference_model_architecture.json', 'inference/inference_model_weights.npz',
+                                'inference/inference_model_notimebackbone_architecture.json', 'inference/inference_model_notimebackbone_weights.npz']},
     install_requires=[
         'numpy',
         'pandas',
         'scikit-learn',
-        'tensorflow~=2.14.0',
+        'tensorflow>=2.14.0',
+        'tf-keras',
         'tensorflow-probability~=0.22.1',
         'wandb'
     ],
@@ -31,6 +33,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Topic :: Software Development :: Libraries'
     ],
     keywords='PPG, heart rate, signal processing, uncertainty estimation, biomedical signals',

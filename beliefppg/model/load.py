@@ -1,7 +1,9 @@
 
+import numpy as np
 from tensorflow.keras.models import (
     Model,
-    load_model
+    load_model,
+    model_from_json
     )
 from tensorflow.keras.utils import custom_object_scope
 
@@ -28,4 +30,12 @@ def load_inference_model(model_path: str) -> Model:
                       'PriorLayer': PriorLayer}
 
     with custom_object_scope(custom_objects):
-        return load_model(model_path)
+        with open(model_path + '_architecture.json', 'r') as json_file:
+            loaded_model_json = json_file.read()
+        model = model_from_json(loaded_model_json)
+
+        model_weights = np.load(model_path + '_weights.npz')
+        weights_list = [model_weights[key] for key in model_weights]
+        model.set_weights(weights_list)
+
+        return model

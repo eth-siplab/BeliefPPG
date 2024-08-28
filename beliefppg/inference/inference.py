@@ -71,9 +71,9 @@ def infer_hr_uncertainty(ppg: np.array, ppg_freq: int, acc: Optional[np.ndarray]
     if model_path is None:
         model_dir = os.path.dirname(os.path.abspath(__file__))
         if use_time_backbone:
-            model_path = os.path.join(model_dir, "inference_model.keras")
+            model_path = os.path.join(model_dir, "inference_model")
         else:
-            model_path = os.path.join(model_dir, "inference_model_notimebackbone.keras")
+            model_path = os.path.join(model_dir, "inference_model_notimebackbone")
 
     # Load the inference model
     inference_model = load_inference_model(model_path)

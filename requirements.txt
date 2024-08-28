@@ -1,6 +1,7 @@
 numpy
 pandas
 scikit-learn
-tensorflow~=2.14.0
+tensorflow>=2.14.0
+tf-keras
 tensorflow-probability~=0.22.1
 wandb
